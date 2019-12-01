@@ -9,13 +9,18 @@ import (
 
 func main() {
 	lines := aoc.ReadFromArgs()
+	solve(lines, fuel)
+	solve(lines, totalFuel)
+}
+
+func solve(input []string, fuelCalc func(int) int) {
 	sum := 0
-	for _, l := range lines {
+	for _, l := range input {
 		n, err := strconv.Atoi(l)
 		if err != nil {
 			log.Fatal(err)
 		}
-		sum += totalFuel(n)
+		sum += fuelCalc(n)
 	}
 	fmt.Println(sum)
 }
