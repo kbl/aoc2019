@@ -1,4 +1,4 @@
-package day01
+package main
 
 import (
 	"aoc"
@@ -7,9 +7,16 @@ import (
 	"strconv"
 )
 
-func Main() {
-	lines := aoc.ReadFromArgs()
+func main() {
+	inputFilePath := aoc.InputArg()
+	Main(inputFilePath)
+}
+
+func Main(inputFilePath string) {
+	lines := aoc.Read(inputFilePath)
+	fmt.Print("Exercise 1: ")
 	solve(lines, Fuel)
+	fmt.Print("Exercise 2: ")
 	solve(lines, TotalFuel)
 }
 
