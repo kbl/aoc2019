@@ -1,4 +1,4 @@
-package main
+package day01
 
 import (
 	"aoc"
@@ -7,10 +7,10 @@ import (
 	"strconv"
 )
 
-func main() {
+func Main() {
 	lines := aoc.ReadFromArgs()
-	solve(lines, fuel)
-	solve(lines, totalFuel)
+	solve(lines, Fuel)
+	solve(lines, TotalFuel)
 }
 
 func solve(input []string, fuelCalc func(int) int) {
@@ -25,7 +25,7 @@ func solve(input []string, fuelCalc func(int) int) {
 	fmt.Println(sum)
 }
 
-func fuel(mass int) int {
+func Fuel(mass int) int {
 	f := mass/3 - 2
 	if f < 0 {
 		return 0
@@ -33,11 +33,11 @@ func fuel(mass int) int {
 	return f
 }
 
-func totalFuel(mass int) int {
+func TotalFuel(mass int) int {
 	f := 0
 	fuelMass := mass
 	for fuelMass > 0 {
-		fuelMass = fuel(fuelMass)
+		fuelMass = Fuel(fuelMass)
 		f += fuelMass
 	}
 	return f
