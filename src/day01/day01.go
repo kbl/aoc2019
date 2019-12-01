@@ -1,24 +1,17 @@
 package main
 
 import (
-	"bufio"
+	"aoc"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 )
 
 func main() {
-	f, err := os.Open("input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
+	lines := aoc.ReadFromArgs()
 	sum := 0
-	for scanner.Scan() {
-		n, err := strconv.Atoi(scanner.Text())
+	for _, l := range lines {
+		n, err := strconv.Atoi(l)
 		if err != nil {
 			log.Fatal(err)
 		}
