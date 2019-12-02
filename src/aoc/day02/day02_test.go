@@ -16,7 +16,7 @@ var testCases = []testCase{
 
 func TestFuel(t *testing.T) {
 	for _, tc := range testCases {
-		got := Program(tc.input)
+		got := Intcode(tc.input)
 
 		if got != tc.expected {
 			t.Errorf("dummy(%d) = %d, want %d", tc.input, got, tc.expected)
