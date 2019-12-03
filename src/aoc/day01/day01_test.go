@@ -4,41 +4,33 @@ import (
 	"testing"
 )
 
-var fuelTestCases = [][]int{
-	[]int{12, 2},
-	[]int{14, 2},
-	[]int{1969, 654},
-	[]int{100756, 33583},
+type testCase struct {
+	input, expectedFuel, expectedTotalFuel int
 }
 
-var totalFuelTestCases = [][]int{
-	[]int{12, 2},
-	[]int{1969, 966},
-	[]int{100756, 50346},
+var testCases = []testCase{
+	{12, 2, 2},
+	{14, 2, 2},
+	{1969, 654, 966},
+	{100756, 33583, 50346},
 }
 
 func TestFuel(t *testing.T) {
-	for _, tc := range fuelTestCases {
-		input := tc[0]
-		expected := tc[1]
+	for _, tc := range testCases {
+		got := Fuel(tc.input)
 
-		got := Fuel(input)
-
-		if got != expected {
-			t.Errorf("Fuel(%d) = %d, want %d", input, got, expected)
+		if got != tc.expectedFuel {
+			t.Errorf("Fuel(%d) = %d, want %d", tc.input, got, tc.expectedFuel)
 		}
 	}
 }
 
 func TestTotalFuel(t *testing.T) {
-	for _, tc := range totalFuelTestCases {
-		input := tc[0]
-		expected := tc[1]
+	for _, tc := range testCases {
+		got := TotalFuel(tc.input)
 
-		got := TotalFuel(input)
-
-		if got != expected {
-			t.Errorf("TotalFuel(%d) = %d, want %d", input, got, expected)
+		if got != tc.expectedTotalFuel {
+			t.Errorf("TotalFuel(%d) = %d, want %d", tc.input, got, tc.expectedTotalFuel)
 		}
 	}
 }

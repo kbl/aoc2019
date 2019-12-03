@@ -4,19 +4,19 @@ import (
 	"testing"
 )
 
-var testCases = [][]int{
-	[]int{2, 2},
+type testCase struct {
+	input    int
+	expected int
 }
 
-func TestFuel(t *testing.T) {
+var testCases = []testCase{}
+
+func TestSomething(t *testing.T) {
 	for _, tc := range testCases {
-		input := tc[0]
-		expected := tc[1]
+		got := tc.expected
 
-		got := expected
-
-		if got != expected {
-			t.Errorf("dummy(%d) = %d, want %d", input, got, expected)
+		if got != tc.expected {
+			t.Errorf("dummy(%d) = %d, want %d", tc.input, got, tc.expected)
 		}
 	}
 }
