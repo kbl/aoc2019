@@ -30,30 +30,30 @@ var testCases = []testCase{
 	},
 }
 
-func TestFuel(t *testing.T) {
+func TestClosestDistance(t *testing.T) {
 	for _, tc := range testCases {
-		w := NewWires()
-		w.Wire1(tc.wire1)
-		w.Wire2(tc.wire2)
+		w := Wires{}
+		w.Wire(tc.wire1)
+		w.Wire(tc.wire2)
 
-		got := w.Closest()
+		got := w.ClosestDistance()
 
 		if got != tc.distance {
-			t.Errorf("dummy(%s) = %d, want %d;", tc.wire1, got, tc.distance)
+			t.Errorf("w.ClosestDistance() = %d, want %d;", got, tc.distance)
 		}
 	}
 }
 
-func TestFuel2(t *testing.T) {
+func TestShortestPath(t *testing.T) {
 	for _, tc := range testCases {
-		w := NewWires()
-		w.Wire1(tc.wire1)
-		w.Wire2(tc.wire2)
+		w := Wires{}
+		w.Wire(tc.wire1)
+		w.Wire(tc.wire2)
 
-		got := w.Steps()
+		got := w.ShortestPath()
 
 		if got != tc.steps {
-			t.Errorf("dummy(%s) = %d, want %d;", tc.wire1, got, tc.steps)
+			t.Errorf("w.ShortestPath() = %d, want %d;", got, tc.steps)
 		}
 	}
 }

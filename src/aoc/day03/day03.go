@@ -17,91 +17,59 @@ func (p *point) distance() int {
 	return int(math.Abs(float64(p.x)) + math.Abs(float64(p.y)))
 }
 
+var moves = map[byte][]int{
+	'L': {-1, 0},
+	'R': {1, 0},
+	'D': {0, -1},
+	'U': {0, 1},
+}
+
+func (p *point) move(direction byte) *point {
+	return &point{
+		p.x + moves[direction][0],
+		p.y + moves[direction][1],
+	}
+}
+
 func (p *point) trail(instruction string) *[]point {
 	distance, err := strconv.Atoi(instruction[1:])
 	if err != nil {
 		log.Fatal(err)
 	}
 	var trail []point
-	switch instruction[0] {
-	case 'L':
-		for i := 1; i <= distance; i++ {
-			p := point{
-				p.x - i,
-				p.y,
-			}
-			trail = append(trail, p)
-		}
-	case 'R':
-		for i := 1; i <= distance; i++ {
-			p := point{
-				p.x + i,
-				p.y,
-			}
-			trail = append(trail, p)
-		}
-	case 'U':
-		for i := 1; i <= distance; i++ {
-			p := point{
-				p.x,
-				p.y + i,
-			}
-			trail = append(trail, p)
-		}
-	case 'D':
-		for i := 1; i <= distance; i++ {
-			p := point{
-				p.x,
-				p.y - i,
-			}
-			trail = append(trail, p)
-		}
+	for i := 1; i <= distance; i++ {
+		p = p.move(instruction[0])
+		trail = append(trail, *p)
 	}
 	return &trail
 }
 
 type Wires struct {
-	grid1, grid2 map[point]bool
-	wire1, wire2 []string
+	wires []map[point]int
 }
 
-func NewWires() *Wires {
-	return &Wires{
-		make(map[point]bool),
-		make(map[point]bool),
-		nil,
-		nil,
-	}
-}
+func (w *Wires) Wire(instructions []string) {
+	wire := make(map[point]int)
+	w.wires = append(w.wires, wire)
 
-func (w *Wires) Wire1(wire []string) {
-	w.wire1 = wire
 	currentPosition := &point{0, 0}
-	for _, instruction := range wire {
-		trail := *currentPosition.trail(instruction)
-		for _, p := range trail {
-			w.grid1[p] = true
+	length := 0
+	for _, instruction := range instructions {
+		for _, p := range *currentPosition.trail(instruction) {
+			length += 1
+			wire[p] = length
+			currentPosition = &p
 		}
-		currentPosition = &trail[len(trail)-1]
 	}
 }
 
-func (w *Wires) Wire2(wire []string) {
-	w.wire2 = wire
-	currentPosition := &point{0, 0}
-	for _, instruction := range wire {
-		trail := *currentPosition.trail(instruction)
-		for _, p := range trail {
-			w.grid2[p] = true
-		}
-		currentPosition = &trail[len(trail)-1]
-	}
-}
-
-func (w *Wires) Closest() int {
+func (w *Wires) ClosestDistance() int {
 	closest := -1
-	for p, _ := range w.grid1 {
-		if _, ok := w.grid2[p]; !ok {
+	w0 := w.wires[0]
+	w1 := w.wires[1]
+
+	for p := range w0 {
+		if _, ok := w1[p]; !ok {
 			continue
 		}
 
@@ -114,48 +82,19 @@ func (w *Wires) Closest() int {
 	return closest
 }
 
-func (w *Wires) Steps() int {
-	intersections := make(map[point]int)
-	for p, _ := range w.grid1 {
-		if _, ok := w.grid2[p]; ok {
-			intersections[p] = 0
-		}
-	}
-
-	wire := w.wire1
-	steps := 0
-	currentPosition := &point{0, 0}
-	for _, instruction := range wire {
-		trail := *currentPosition.trail(instruction)
-		for _, p := range trail {
-			steps += 1
-			if _, ok := intersections[p]; ok {
-				intersections[p] += steps
-			}
-		}
-		currentPosition = &trail[len(trail)-1]
-	}
-
-	wire = w.wire2
-	steps = 0
-	currentPosition = &point{0, 0}
-	for _, instruction := range wire {
-		trail := *currentPosition.trail(instruction)
-		for _, p := range trail {
-			steps += 1
-			if _, ok := intersections[p]; ok {
-				intersections[p] += steps
-			}
-		}
-		currentPosition = &trail[len(trail)-1]
-	}
-
+func (w *Wires) ShortestPath() int {
 	closest := -1
-	for _, v := range intersections {
-		if closest == -1 {
-			closest = v
-		} else if v < closest {
-			closest = v
+	w0 := w.wires[0]
+	w1 := w.wires[1]
+
+	for p := range w0 {
+		if _, ok := w1[p]; !ok {
+			continue
+		}
+
+		steps := w1[p] + w0[p]
+		if closest == -1 || closest > steps {
+			closest = steps
 		}
 	}
 
@@ -164,9 +103,19 @@ func (w *Wires) Steps() int {
 
 func main() {
 	inputFilePath := aoc.InputArg()
+	Main(inputFilePath)
+}
+
+func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	directions := parseInput(lines)
-	Main(directions)
+
+	wires := Wires{}
+	wires.Wire(directions[0])
+	wires.Wire(directions[1])
+
+	fmt.Printf("Exercise 1: %d\n", wires.ClosestDistance())
+	fmt.Printf("Exercise 2: %d\n", wires.ShortestPath())
 }
 
 func parseInput(lines []string) [][]string {
@@ -174,12 +123,4 @@ func parseInput(lines []string) [][]string {
 		strings.Split(lines[0], ","),
 		strings.Split(lines[1], ","),
 	}
-}
-
-func Main(directions [][]string) {
-	fmt.Printf("Read %s lines!\n", directions[0])
-	fmt.Printf("Read %s lines!\n", directions[1])
-	wires := NewWires()
-	wires.Wire1(directions[0])
-	wires.Wire2(directions[1])
 }
