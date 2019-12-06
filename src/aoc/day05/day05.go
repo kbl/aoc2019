@@ -18,9 +18,9 @@ func Main(inputFilePath string) {
 	memory := parseMemory(lines[0])
 
 	fmt.Printf("Exercise 1: ")
-	exercise1(memory)
-	// fmt.Printf("Exercise 2: ")
-	// exercise2(memory)
+	exercise1(memory, 1)
+	fmt.Printf("Exercise 2: ")
+	exercise1(memory, 5)
 }
 
 func parseMemory(line string) *[]int {
@@ -36,19 +36,23 @@ func parseMemory(line string) *[]int {
 	return &memory
 }
 
-func exercise1(memoryPtr *[]int) {
+func exercise1(memoryPtr *[]int, inputValue int) {
 	memory := *memoryPtr
 	memCopy := make([]int, len(memory))
 	copy(memCopy, memory[:])
-	fmt.Println(NewIntcode(&memCopy).Execute())
+	fmt.Println(NewIntcode(&memCopy, inputValue).Execute())
 }
 
 const (
-	add      = 1
-	multiply = 2
-	input    = 3
-	output   = 4
-	halt     = 99
+	add         = 1
+	multiply    = 2
+	input       = 3
+	output      = 4
+	jumpIfTrue  = 5
+	jumpIfFalse = 6
+	lessThan    = 7
+	equals      = 8
+	halt        = 99
 )
 
 const (
@@ -57,14 +61,15 @@ const (
 )
 
 type Intcode struct {
-	instructionPointer, DiagnosticCode int
-	memory                             []int
+	instructionPointer, DiagnosticCode, inputValue int
+	memory                                         []int
 }
 
-func NewIntcode(memory *[]int) *Intcode {
+func NewIntcode(memory *[]int, inputValue int) *Intcode {
 	return &Intcode{
 		0,
 		-1,
+		inputValue,
 		*memory,
 	}
 }
@@ -85,6 +90,14 @@ func (i *Intcode) Execute() int {
 			i.input()
 		case output:
 			i.output(modes)
+		case jumpIfTrue:
+			i.jumpIfTrue(modes)
+		case jumpIfFalse:
+			i.jumpIfFalse(modes)
+		case lessThan:
+			i.lessThan(modes)
+		case equals:
+			i.equals(modes)
 		default:
 			log.Fatalf("Unknown opcode %d\n", opcode)
 		}
@@ -133,7 +146,7 @@ func (i *Intcode) halt() {
 
 func (i *Intcode) input() {
 	inputIndex := i.memory[i.instructionPointer+1]
-	i.memory[inputIndex] = 1
+	i.memory[inputIndex] = i.inputValue
 	i.instructionPointer += 2
 }
 
@@ -142,6 +155,54 @@ func (i *Intcode) output(modes *modes) {
 	fmt.Printf("Diagnostic code: %d\n", outputValue)
 	i.DiagnosticCode = outputValue
 	i.instructionPointer += 2
+}
+
+func (i *Intcode) jumpIfTrue(modes *modes) {
+	// jump-if-true: if the first parameter is non-zero, it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
+	param1Value := i.value(0, modes, i.instructionPointer+1)
+	param2Value := i.value(1, modes, i.instructionPointer+2)
+	if param1Value != 0 {
+		i.instructionPointer = param2Value
+	} else {
+		i.instructionPointer += 3
+	}
+}
+
+func (i *Intcode) jumpIfFalse(modes *modes) {
+	// jump-if-false: if the first parameter is zero, it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
+	param1Value := i.value(0, modes, i.instructionPointer+1)
+	param2Value := i.value(1, modes, i.instructionPointer+2)
+	if param1Value == 0 {
+		i.instructionPointer = param2Value
+	} else {
+		i.instructionPointer += 3
+	}
+}
+
+func (i *Intcode) lessThan(modes *modes) {
+	// less than: if the first parameter is less than the second parameter, it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+	param1Value := i.value(0, modes, i.instructionPointer+1)
+	param2Value := i.value(1, modes, i.instructionPointer+2)
+	outputIndex := i.memory[i.instructionPointer+3]
+	if param1Value < param2Value {
+		i.memory[outputIndex] = 1
+	} else {
+		i.memory[outputIndex] = 0
+	}
+	i.instructionPointer += 4
+}
+
+func (i *Intcode) equals(modes *modes) {
+	// equals: if the first parameter is equal to the second parameter, it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+	param1Value := i.value(0, modes, i.instructionPointer+1)
+	param2Value := i.value(1, modes, i.instructionPointer+2)
+	outputIndex := i.memory[i.instructionPointer+3]
+	if param1Value == param2Value {
+		i.memory[outputIndex] = 1
+	} else {
+		i.memory[outputIndex] = 0
+	}
+	i.instructionPointer += 4
 }
 
 func (i *Intcode) value(paramIndex int, modes *modes, instructionPointer int) int {
