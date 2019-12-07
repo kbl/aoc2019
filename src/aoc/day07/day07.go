@@ -26,7 +26,7 @@ func Main(inputFilePath string) {
 	exercise(memory, permutations)
 }
 
-func parseMemory(line string) *[]int {
+func parseMemory(line string) []int {
 	strNumbers := strings.Split(line, ",")
 	var memory []int
 	for _, sn := range strNumbers {
@@ -36,7 +36,7 @@ func parseMemory(line string) *[]int {
 		}
 		memory = append(memory, m)
 	}
-	return &memory
+	return memory
 }
 
 type Input struct {
@@ -80,8 +80,7 @@ func getPermutations(input []int) (permuts [][]int) {
 	return permuts
 }
 
-func exercise(memoryPtr *[]int, permutations [][]int) {
-	memory := *memoryPtr
+func exercise(memory []int, permutations [][]int) {
 	biggestOutput := 0
 
 	for _, permutation := range permutations {
@@ -91,29 +90,19 @@ func exercise(memoryPtr *[]int, permutations [][]int) {
 		d := permutation[3]
 		e := permutation[4]
 
-		memCopy := make([]int, len(memory))
-		copy(memCopy, memory[:])
-		intcodeA := NewIntcode(memCopy)
+		intcodeA := NewIntcode(memory)
 		intcodeA.AddInput(a)
 
-		memCopy = make([]int, len(memory))
-		copy(memCopy, memory[:])
-		intcodeB := NewIntcode(memCopy)
+		intcodeB := NewIntcode(memory)
 		intcodeB.AddInput(b)
 
-		memCopy = make([]int, len(memory))
-		copy(memCopy, memory[:])
-		intcodeC := NewIntcode(memCopy)
+		intcodeC := NewIntcode(memory)
 		intcodeC.AddInput(c)
 
-		memCopy = make([]int, len(memory))
-		copy(memCopy, memory[:])
-		intcodeD := NewIntcode(memCopy)
+		intcodeD := NewIntcode(memory)
 		intcodeD.AddInput(d)
 
-		memCopy = make([]int, len(memory))
-		copy(memCopy, memory[:])
-		intcodeE := NewIntcode(memCopy)
+		intcodeE := NewIntcode(memory)
 		intcodeE.AddInput(e)
 
 		outputE := 0
@@ -167,24 +156,16 @@ const (
 )
 
 type Intcode struct {
-	instructionPointer, DiagnosticCode int
-	memory                             []int
-	in                                 *Input
+	instructionPointer int
+	memory             []int
+	in                 *Input
+	out                int
 }
 
 func NewIntcode(memory []int) *Intcode {
-	s := 0
-	for _, m := range memory {
-		s += m
-	}
-	// fmt.Println("sum", s)
-	instructionPointer := 0
-	diagnosticCode := -1
 	return &Intcode{
-		instructionPointer,
-		diagnosticCode,
-		memory,
-		NewInput(),
+		memory: memory,
+		in:     NewInput(),
 	}
 }
 
@@ -206,42 +187,11 @@ func (i *Intcode) Output() (int, mode) {
 			i.multiply(modes)
 		case halt:
 			i.halt()
-			return i.DiagnosticCode, haltMode
+			return i.out, haltMode
 		case input:
 			i.input()
 		case output:
-			i.output(modes)
-			return i.DiagnosticCode, outputMode
-		case jumpIfTrue:
-			i.jumpIfTrue(modes)
-		case jumpIfFalse:
-			i.jumpIfFalse(modes)
-		case lessThan:
-			i.lessThan(modes)
-		case equals:
-			i.equals(modes)
-		default:
-			log.Fatalf("Unknown opcode %d\n", opcode)
-		}
-	}
-}
-
-func (i *Intcode) Execute() int {
-	for {
-		opcode := i.memory[i.instructionPointer] % 100
-		modes := newModes(i.memory[i.instructionPointer] / 100)
-		switch opcode {
-		case add:
-			i.add(modes)
-		case multiply:
-			i.multiply(modes)
-		case halt:
-			i.halt()
-			return i.memory[0]
-		case input:
-			i.input()
-		case output:
-			i.output(modes)
+			return i.output(modes), outputMode
 		case jumpIfTrue:
 			i.jumpIfTrue(modes)
 		case jumpIfFalse:
@@ -303,15 +253,14 @@ func (i *Intcode) input() {
 	i.instructionPointer += 2
 }
 
-func (i *Intcode) output(modes *modes) {
+func (i *Intcode) output(modes *modes) int {
 	outputValue := i.value(0, modes, i.instructionPointer+1)
-	// fmt.Printf("Diagnostic code: %d\n", outputValue)
-	i.DiagnosticCode = outputValue
+	i.out = outputValue
 	i.instructionPointer += 2
+	return outputValue
 }
 
 func (i *Intcode) jumpIfTrue(modes *modes) {
-	// jump-if-true: if the first parameter is non-zero, it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
 	param1Value := i.value(0, modes, i.instructionPointer+1)
 	param2Value := i.value(1, modes, i.instructionPointer+2)
 	if param1Value != 0 {
