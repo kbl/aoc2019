@@ -18,9 +18,12 @@ func Main(inputFilePath string) {
 	memory := parseMemory(lines[0])
 
 	fmt.Printf("Exercise 1: ")
-	exercise1(memory, 1)
-	// fmt.Printf("Exercise 2: ")
-	// exercise1(memory, 5)
+	permutations := getPermutations([]int{0, 1, 2, 3, 4})
+	exercise(memory, permutations)
+
+	fmt.Printf("Exercise 2: ")
+	permutations = getPermutations([]int{5, 6, 7, 8, 9})
+	exercise(memory, permutations)
 }
 
 func parseMemory(line string) *[]int {
@@ -58,37 +61,35 @@ func (i *Input) Get() int {
 	return value
 }
 
-func permutation(xs []int) (permuts [][]int) {
+// https://www.golangprograms.com/golang-program-to-generate-slice-permutations-of-number-entered-by-user.html
+func getPermutations(input []int) (permuts [][]int) {
 	var rc func([]int, int)
 	rc = func(a []int, k int) {
 		if k == len(a) {
 			permuts = append(permuts, append([]int{}, a...))
 		} else {
-			for i := k; i < len(xs); i++ {
+			for i := k; i < len(input); i++ {
 				a[k], a[i] = a[i], a[k]
 				rc(a, k+1)
 				a[k], a[i] = a[i], a[k]
 			}
 		}
 	}
-	rc(xs, 0)
+	rc(input, 0)
 
 	return permuts
 }
 
-func exercise1(memoryPtr *[]int, inputValue int) {
+func exercise(memoryPtr *[]int, permutations [][]int) {
 	memory := *memoryPtr
 	biggestOutput := 0
 
-	// ps := permutation([]int{0, 1, 2, 3, 4})
-	ps := permutation([]int{5, 6, 7, 8, 9})
-
-	for _, p := range ps {
-		a := p[0]
-		b := p[1]
-		c := p[2]
-		d := p[3]
-		e := p[4]
+	for _, permutation := range permutations {
+		a := permutation[0]
+		b := permutation[1]
+		c := permutation[2]
+		d := permutation[3]
+		e := permutation[4]
 
 		memCopy := make([]int, len(memory))
 		copy(memCopy, memory[:])
@@ -132,9 +133,6 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 
 			intcodeE.AddInput(outputD)
 			outputE, mode = intcodeE.Output()
-
-			fmt.Println(mode)
-			fmt.Printf("%d%d%d%d%d: %d\n", a, b, c, d, e, outputE)
 
 			if mode == haltMode {
 				break
