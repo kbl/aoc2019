@@ -80,7 +80,8 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 	memory := *memoryPtr
 	biggestOutput := 0
 
-	ps := permutation([]int{0, 1, 2, 3, 4})
+	// ps := permutation([]int{0, 1, 2, 3, 4})
+	ps := permutation([]int{5, 6, 7, 8, 9})
 
 	for _, p := range ps {
 		a := p[0]
@@ -93,7 +94,6 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 		copy(memCopy, memory[:])
 		intcodeA := NewIntcode(memCopy)
 		intcodeA.AddInput(a)
-		intcodeA.AddInput(0)
 
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
@@ -115,22 +115,30 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 		intcodeE := NewIntcode(memCopy)
 		intcodeE.AddInput(e)
 
+		outputE := 0
+
 		for {
-			outputA := intcodeA.Output()
+			intcodeA.AddInput(outputE)
+			outputA, mode := intcodeA.Output()
 
 			intcodeB.AddInput(outputA)
-			outputB := intcodeB.Output()
+			outputB, mode := intcodeB.Output()
 
 			intcodeC.AddInput(outputB)
-			outputC := intcodeC.Output()
+			outputC, mode := intcodeC.Output()
 
 			intcodeD.AddInput(outputC)
-			outputD := intcodeD.Output()
+			outputD, mode := intcodeD.Output()
 
 			intcodeE.AddInput(outputD)
-			outputE := intcodeE.Output()
+			outputE, mode = intcodeE.Output()
 
+			fmt.Println(mode)
 			fmt.Printf("%d%d%d%d%d: %d\n", a, b, c, d, e, outputE)
+
+			if mode == haltMode {
+				break
+			}
 		}
 
 		if outputE > biggestOutput {
@@ -140,6 +148,8 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 
 	fmt.Println(biggestOutput)
 }
+
+type mode int
 
 const (
 	add         = 1
@@ -180,11 +190,14 @@ func NewIntcode(memory []int) *Intcode {
 	}
 }
 
+var haltMode mode = 0
+var outputMode mode = 1
+
 func (i *Intcode) AddInput(value int) {
 	i.in.Add(value)
 }
 
-func (i *Intcode) Output() int {
+func (i *Intcode) Output() (int, mode) {
 	for {
 		opcode := i.memory[i.instructionPointer] % 100
 		modes := newModes(i.memory[i.instructionPointer] / 100)
@@ -195,12 +208,12 @@ func (i *Intcode) Output() int {
 			i.multiply(modes)
 		case halt:
 			i.halt()
-			return i.memory[0]
+			return i.DiagnosticCode, haltMode
 		case input:
 			i.input()
 		case output:
 			i.output(modes)
-			return i.DiagnosticCode
+			return i.DiagnosticCode, outputMode
 		case jumpIfTrue:
 			i.jumpIfTrue(modes)
 		case jumpIfFalse:
