@@ -92,8 +92,8 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 		memCopy := make([]int, len(memory))
 		copy(memCopy, memory[:])
 		intcodeA := NewIntcode(memCopy)
-		intCodeA.AddInput(a)
-		intCodeA.AddInput(0)
+		intcodeA.AddInput(a)
+		intcodeA.AddInput(0)
 		intcodeA.Execute()
 		outputA := intcodeA.DiagnosticCode
 
@@ -113,17 +113,19 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 		intcodeC.Execute()
 		outputC := intcodeC.DiagnosticCode
 
-		dInput := []int{d, outputC}
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
-		intcodeD := NewIntcode(memCopy, dInput)
+		intcodeD := NewIntcode(memCopy)
+		intcodeD.AddInput(d)
+		intcodeD.AddInput(outputC)
 		intcodeD.Execute()
 		outputD := intcodeD.DiagnosticCode
 
-		eInput := []int{e, outputD}
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
-		intcodeE := NewIntcode(memCopy, eInput)
+		intcodeE := NewIntcode(memCopy)
+		intcodeE.AddInput(e)
+		intcodeE.AddInput(outputD)
 		intcodeE.Execute()
 		outputE := intcodeE.DiagnosticCode
 		fmt.Printf("%d%d%d%d%d: %d\n", a, b, c, d, e, outputE)
@@ -154,7 +156,6 @@ const (
 
 type Intcode struct {
 	instructionPointer, DiagnosticCode int
-	inputPointer                       int
 	memory                             []int
 	in                                 *Input
 }
@@ -167,11 +168,9 @@ func NewIntcode(memory []int) *Intcode {
 	// fmt.Println("sum", s)
 	instructionPointer := 0
 	diagnosticCode := -1
-	inputPointer := 0
 	return &Intcode{
 		instructionPointer,
 		diagnosticCode,
-		inputPointer,
 		memory,
 		NewInput(),
 	}
@@ -284,10 +283,9 @@ func (i *Intcode) halt() {
 
 func (i *Intcode) input() {
 	inputIndex := i.memory[i.instructionPointer+1]
-	inputValue := i.inputs[i.inputPointer]
+	inputValue := i.in.Get()
 	i.memory[inputIndex] = inputValue
 	i.instructionPointer += 2
-	i.inputPointer += 1
 }
 
 func (i *Intcode) output(modes *modes) {
