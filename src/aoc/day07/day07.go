@@ -109,10 +109,6 @@ func (is *IntcodeSequence) Run() int {
 				ic.AddInput(previousOutput)
 				previousOutput, m = ic.Output()
 			}
-
-			if m == haltMode {
-				break
-			}
 		}
 
 		if previousOutput > biggestOutput {
