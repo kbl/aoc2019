@@ -94,41 +94,45 @@ func exercise1(memoryPtr *[]int, inputValue int) {
 		intcodeA := NewIntcode(memCopy)
 		intcodeA.AddInput(a)
 		intcodeA.AddInput(0)
-		intcodeA.Execute()
-		outputA := intcodeA.DiagnosticCode
 
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
 		intcodeB := NewIntcode(memCopy)
 		intcodeB.AddInput(b)
-		intcodeB.AddInput(outputA)
-		intcodeB.Execute()
-		outputB := intcodeB.DiagnosticCode
 
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
 		intcodeC := NewIntcode(memCopy)
 		intcodeC.AddInput(c)
-		intcodeC.AddInput(outputB)
-		intcodeC.Execute()
-		outputC := intcodeC.DiagnosticCode
 
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
 		intcodeD := NewIntcode(memCopy)
 		intcodeD.AddInput(d)
-		intcodeD.AddInput(outputC)
-		intcodeD.Execute()
-		outputD := intcodeD.DiagnosticCode
 
 		memCopy = make([]int, len(memory))
 		copy(memCopy, memory[:])
 		intcodeE := NewIntcode(memCopy)
 		intcodeE.AddInput(e)
-		intcodeE.AddInput(outputD)
-		intcodeE.Execute()
-		outputE := intcodeE.DiagnosticCode
-		fmt.Printf("%d%d%d%d%d: %d\n", a, b, c, d, e, outputE)
+
+		for {
+			outputA := intcodeA.Output()
+
+			intcodeB.AddInput(outputA)
+			outputB := intcodeB.Output()
+
+			intcodeC.AddInput(outputB)
+			outputC := intcodeC.Output()
+
+			intcodeD.AddInput(outputC)
+			outputD := intcodeD.Output()
+
+			intcodeE.AddInput(outputD)
+			outputE := intcodeE.Output()
+
+			fmt.Printf("%d%d%d%d%d: %d\n", a, b, c, d, e, outputE)
+		}
+
 		if outputE > biggestOutput {
 			biggestOutput = outputE
 		}
