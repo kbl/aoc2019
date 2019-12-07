@@ -17,13 +17,11 @@ func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	memory := parseMemory(lines[0])
 
-	fmt.Printf("Exercise 1: ")
-	permutations := getPermutations([]int{0, 1, 2, 3, 4})
-	exercise(memory, permutations)
+	ics := NewIntcodeSequence(memory, []int{0, 1, 2, 3, 4})
+	fmt.Println("Exercise 1: ", ics.Run())
 
-	fmt.Printf("Exercise 2: ")
-	permutations = getPermutations([]int{5, 6, 7, 8, 9})
-	exercise(memory, permutations)
+	ics = NewIntcodeSequence(memory, []int{5, 6, 7, 8, 9})
+	fmt.Println("Exercise 2: ", ics.Run())
 }
 
 func parseMemory(line string) []int {
@@ -61,79 +59,68 @@ func (i *Input) Get() int {
 	return value
 }
 
+type IntcodeSequence struct {
+	memory, phaseOptions []int
+}
+
+func NewIntcodeSequence(memory, phaseOptions []int) *IntcodeSequence {
+	return &IntcodeSequence{
+		memory,
+		phaseOptions,
+	}
+}
+
 // https://www.golangprograms.com/golang-program-to-generate-slice-permutations-of-number-entered-by-user.html
-func getPermutations(input []int) (permuts [][]int) {
+func (is *IntcodeSequence) phaseSettings() (settings [][]int) {
 	var rc func([]int, int)
 	rc = func(a []int, k int) {
 		if k == len(a) {
-			permuts = append(permuts, append([]int{}, a...))
+			settings = append(settings, append([]int{}, a...))
 		} else {
-			for i := k; i < len(input); i++ {
+			for i := k; i < len(is.phaseOptions); i++ {
 				a[k], a[i] = a[i], a[k]
 				rc(a, k+1)
 				a[k], a[i] = a[i], a[k]
 			}
 		}
 	}
-	rc(input, 0)
+	rc(is.phaseOptions, 0)
 
-	return permuts
+	return settings
 }
 
-func exercise(memory []int, permutations [][]int) {
+func (is *IntcodeSequence) Run() int {
 	biggestOutput := 0
 
-	for _, permutation := range permutations {
-		a := permutation[0]
-		b := permutation[1]
-		c := permutation[2]
-		d := permutation[3]
-		e := permutation[4]
+	for _, phaseSetting := range is.phaseSettings() {
+		intcodes := []*Intcode{}
 
-		intcodeA := NewIntcode(memory)
-		intcodeA.AddInput(a)
+		for _, ps := range phaseSetting {
+			ic := NewIntcode(is.memory)
+			ic.AddInput(ps)
+			intcodes = append(intcodes, ic)
+		}
 
-		intcodeB := NewIntcode(memory)
-		intcodeB.AddInput(b)
-
-		intcodeC := NewIntcode(memory)
-		intcodeC.AddInput(c)
-
-		intcodeD := NewIntcode(memory)
-		intcodeD.AddInput(d)
-
-		intcodeE := NewIntcode(memory)
-		intcodeE.AddInput(e)
-
-		outputE := 0
+		previousOutput := 0
+		m := haltMode
 
 		for {
-			intcodeA.AddInput(outputE)
-			outputA, mode := intcodeA.Output()
+			for _, ic := range intcodes {
+				ic.AddInput(previousOutput)
+				previousOutput, m = ic.Output()
+			}
 
-			intcodeB.AddInput(outputA)
-			outputB, mode := intcodeB.Output()
-
-			intcodeC.AddInput(outputB)
-			outputC, mode := intcodeC.Output()
-
-			intcodeD.AddInput(outputC)
-			outputD, mode := intcodeD.Output()
-
-			intcodeE.AddInput(outputD)
-			outputE, mode = intcodeE.Output()
-
-			if mode == haltMode {
+			if m == haltMode {
 				break
 			}
 		}
 
-		if outputE > biggestOutput {
-			biggestOutput = outputE
+		if previousOutput > biggestOutput {
+			biggestOutput = previousOutput
 		}
 	}
 
-	fmt.Println(biggestOutput)
+	return biggestOutput
 }
 
 type mode int
