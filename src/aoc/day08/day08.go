@@ -12,36 +12,48 @@ func main() {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	fmt.Printf("Read %d lines!\n", len(lines))
-	exercise1(lines[0])
+	layers := toLayers(lines[0])
+	fmt.Println("Exercise 1:", exercise1(layers))
+
+	fmt.Println("Exercise 2:")
+	merged := exercise2(layers)
+	for i := 0; i < pixels; i += lineWidth {
+		fmt.Println(string(merged[i : i+lineWidth]))
+	}
 }
 
 const (
 	black       = '0'
 	white       = '1'
 	transparent = '2'
+	lineWidth   = 25
+	pixels      = lineWidth * 6
 )
 
-func exercise1(line string) int {
-	layers := map[int][]rune{}
-	howMany := 25 * 6
-	sz := howMany
-	i := 0
+type layer []rune
+
+func toLayers(line string) []layer {
+	layers := []layer{}
+	for start := 0; start < len(line); start += pixels {
+		layerstr := line[start : start+pixels]
+		layers = append(layers, []rune(layerstr))
+	}
+	return layers
+}
+
+func exercise1(layers []layer) int {
 	value := 0
+	lowestZerosCount := pixels
 
-	for start := 0; start < len(line); start += howMany {
-
-		layerstr := line[start : start+howMany]
-		layer := []rune(layerstr)
-		layers[i] = layer
-		hm := 0
+	for _, l := range layers {
+		zeros := 0
 		ones := 0
 		twos := 0
 
-		for _, r := range layer {
+		for _, r := range l {
 			switch r {
 			case '0':
-				hm++
+				zeros++
 			case '1':
 				ones++
 			case '2':
@@ -49,50 +61,31 @@ func exercise1(line string) int {
 			}
 		}
 
-		if hm < sz {
+		if zeros < lowestZerosCount {
 			value = ones * twos
+			lowestZerosCount = zeros
 		}
-
-		layers[i] = layer
-		i++
 	}
 
-	fmt.Println(value)
+	return value
+}
 
-	merged := []rune("222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222")
-
-	for i := 0; i < len(layers); i++ {
-		l := layers[i]
+func exercise2(layers []layer) layer {
+	merged := layers[0]
+	for _, l := range layers[1:] {
 		for i, c := range l {
 			if merged[i] == transparent {
 				merged[i] = c
 			}
 		}
 	}
-
-	hm := 0
-	ones := 0
-	twos := 0
-
-	for _, r := range merged {
-		switch r {
-		case '0':
-			hm++
-		case '1':
-			ones++
-		case '2':
-			twos++
+	for i, c := range merged {
+		switch c {
+		case white:
+			merged[i] = '#'
+		case black:
+			merged[i] = ' '
 		}
 	}
-
-	fmt.Println(ones)
-
-	fmt.Println(string(merged[:25]))
-	fmt.Println(string(merged[25:50]))
-	fmt.Println(string(merged[50:75]))
-	fmt.Println(string(merged[75:100]))
-	fmt.Println(string(merged[100:125]))
-	fmt.Println(string(merged[125:150]))
-
-	return 0
+	return merged
 }
