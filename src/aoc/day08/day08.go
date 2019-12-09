@@ -17,7 +17,7 @@ func Main(inputFilePath string) {
 
 	fmt.Println("Exercise 2:")
 	merged := exercise2(layers)
-	for i := 0; i < pixels; i += lineWidth {
+	for i := 0; i < layerPixels; i += lineWidth {
 		fmt.Println(string(merged[i : i+lineWidth]))
 	}
 }
@@ -27,15 +27,15 @@ const (
 	white       = '1'
 	transparent = '2'
 	lineWidth   = 25
-	pixels      = lineWidth * 6
+	layerPixels = lineWidth * 6
 )
 
 type layer []rune
 
 func toLayers(line string) []layer {
 	layers := []layer{}
-	for start := 0; start < len(line); start += pixels {
-		layerstr := line[start : start+pixels]
+	for start := 0; start < len(line); start += layerPixels {
+		layerstr := line[start : start+layerPixels]
 		layers = append(layers, []rune(layerstr))
 	}
 	return layers
@@ -43,7 +43,7 @@ func toLayers(line string) []layer {
 
 func exercise1(layers []layer) int {
 	value := 0
-	lowestZerosCount := pixels
+	lowestZerosCount := layerPixels
 
 	for _, l := range layers {
 		zeros := 0
