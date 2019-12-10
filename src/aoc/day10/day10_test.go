@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-type testCase struct {
+type visibilityTestCase struct {
 	s        string
 	expected map[Cord]int
 }
 
-var testCases = []testCase{
+var visibilityTestCases = []visibilityTestCase{
 	{`.#..#
 .....
 #####
@@ -36,7 +36,39 @@ var testCases = []testCase{
 ....##.##.###..#####
 .#.#.###########.###
 #.#.#.#####.####.###
-###.##.####.##.#..##`, map[Cord]int{{11, 13}: 222}},
+###.##.####.##.#..##`, map[Cord]int{{11, 13}: 210}},
+	{`###..#########.#####.
+.####.#####..####.#.#
+.###.#.#.#####.##..##
+##.####.#.###########
+###...#.####.#.#.####
+#.##..###.########...
+#.#######.##.#######.
+.#..#.#..###...####.#
+#######.##.##.###..##
+#.#......#....#.#.#..
+######.###.#.#.##...#
+####.#...#.#######.#.
+.######.#####.#######
+##.##.##.#####.##.#.#
+###.#######..##.#....
+###.##.##..##.#####.#
+##.########.#.#.#####
+.##....##..###.#...#.
+#..#.####.######..###
+..#.####.############
+..##...###..#########`, map[Cord]int{{11, 11}: 221}},
+}
+
+func TestVisible(t *testing.T) {
+	for _, tc := range visibilityTestCases {
+		s := NewSpace(tc.s)
+		for c, expected := range tc.expected {
+			if s.Visible(c) != expected {
+				t.Errorf("s.Visible(%v) = %d, wants %d!", c, s.Visible(c), expected)
+			}
+		}
+	}
 }
 
 func TestPickVisible(t *testing.T) {
@@ -55,7 +87,7 @@ func TestPickVisible(t *testing.T) {
 	}
 }
 
-func TestNewFunction(t *testing.T) {
+func TestNewFunc(t *testing.T) {
 	cords := map[Func]Cords{
 		Func{2, 0}:    Cords{{0, 0}, {1, 2}},
 		Func{1, 0}:    Cords{{0, 0}, {1, 1}},
@@ -73,13 +105,14 @@ func TestNewFunction(t *testing.T) {
 	}
 }
 
-func TestNewSpace(t *testing.T) {
+func TestVaporize(t *testing.T) {
 	sp := `.#....#####...#..
 ##...##.#####..##
 ##...#...#.#####.
 ..#.....#...###..
 ..#.#.....#....##`
 	s := NewSpace(sp)
+
 	// for c, expected := range tc.expected {
 	// 	if s.Visible(c) != expected {
 	// 		t.Errorf("s.Visible(%v) = %d, wants %d!", c, s.Visible(c), expected)

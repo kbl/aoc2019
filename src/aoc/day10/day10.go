@@ -190,6 +190,17 @@ func (s *Space) Visible(c Cord) int {
 	return len(visible)
 }
 
+func (s *Space) CordWithBestVisibility() (howMany int, cord Cord) {
+	for c := range s.m {
+		count := s.Visible(c)
+		if count > howMany {
+			cord = c
+			howMany = count
+		}
+	}
+	return
+}
+
 func scale(c Cord, m map[Cord]bool) map[Cord]bool {
 	scaled := map[Cord]bool{}
 	for oc := range m {
@@ -325,9 +336,8 @@ func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	linesStr := strings.Join(lines, "\n")
 	s := NewSpace(linesStr)
-	for c := range s.m {
-		fmt.Printf("%v: %d\n", c, s.Visible(c))
-	}
+	hm, c := s.CordWithBestVisibility()
+	fmt.Println("Exercise 1:", hm, c)
 
-	s.Vaporize(Cord{11, 11}, 200)
+	// s.Vaporize(Cord{11, 11}, 200)
 }
