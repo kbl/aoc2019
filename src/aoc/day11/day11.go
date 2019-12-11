@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-var debug = true
+var debug = false
 
 type cord struct {
 	x, y int
@@ -67,9 +67,6 @@ type Robot struct {
 	done   bool
 }
 
-func (r *Robot) Turn(t turn) {
-}
-
 func NewRobot(ic *intcode.Intcode) *Robot {
 	return &Robot{
 		canvas: map[cord]color{},
@@ -78,12 +75,8 @@ func NewRobot(ic *intcode.Intcode) *Robot {
 	}
 }
 
-// 7176 too high
-// 7175 too high
-
 func (r *Robot) Step() {
 	if r.done {
-		fmt.Println(len(r.canvas))
 		panic("I'm done!")
 	}
 	var cordColor color = black
@@ -94,13 +87,11 @@ func (r *Robot) Step() {
 
 	toColor, exitMode := r.ic.Output()
 	if exitMode == intcode.HaltMode {
-		fmt.Println("Halting 1!")
 		r.done = true
 		return
 	}
 	toTurn, exitMode := r.ic.Output()
 	if exitMode == intcode.HaltMode {
-		fmt.Println("Halting 2!")
 		r.done = true
 		return
 	}
@@ -140,6 +131,11 @@ var sOrientation = map[orientation]string{
 	right: "right",
 }
 
+var sColor = map[color]string{
+	white: "#",
+	black: " ",
+}
+
 func main() {
 	inputFilePath := aoc.InputArg()
 	Main(inputFilePath)
@@ -147,10 +143,52 @@ func main() {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	intcode := intcode.NewIntcode(intcode.NewMemory(lines[0]))
-	r := NewRobot(intcode)
-	for {
+	ic := intcode.NewIntcode(intcode.NewMemory(lines[0]))
+	r := NewRobot(ic)
+	for !r.done {
 		r.Step()
 	}
-	fmt.Println(r)
+	fmt.Printf("Exercise 1: %d\n", len(r.canvas))
+
+	ic = intcode.NewIntcode(intcode.NewMemory(lines[0]))
+	r = NewRobot(ic)
+	r.canvas[cord{0, 0}] = white
+	for !r.done {
+		r.Step()
+	}
+	fmt.Println("Exercise 2:")
+	printCanvas(r.canvas)
+}
+
+func printCanvas(canvas map[cord]color) {
+	minx := 0
+	maxx := 0
+	miny := 0
+	maxy := 0
+
+	for c := range canvas {
+		if c.x > maxx {
+			maxx = c.x
+		}
+		if c.x < minx {
+			minx = c.x
+		}
+		if c.y > maxy {
+			maxy = c.y
+		}
+		if c.y < miny {
+			miny = c.y
+		}
+	}
+
+	for y := maxy + 1; y >= miny-1; y-- {
+		for x := minx - 1; x <= maxx+1; x++ {
+			var toPaint color = black
+			if c, ok := canvas[cord{x, y}]; ok {
+				toPaint = c
+			}
+			fmt.Print(sColor[toPaint])
+		}
+		fmt.Println()
+	}
 }
