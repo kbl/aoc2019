@@ -201,14 +201,6 @@ func (s *Space) CordWithBestVisibility() (howMany int, cord Cord) {
 	return
 }
 
-func scale(c Cord, m map[Cord]bool) map[Cord]bool {
-	scaled := map[Cord]bool{}
-	for oc := range m {
-		scaled[Cord{oc.x - c.x, oc.y - c.y}] = true
-	}
-	return scaled
-}
-
 func (s *Space) Vaporize(c Cord, count int) Cord {
 	m := s.m
 	center := c
