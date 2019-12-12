@@ -18,11 +18,10 @@ func main() {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	s := NewSpace(strings.Join(lines, "\n"))
-	s2 := NewSpace(strings.Join(lines, "\n"))
-	s.Simulate(1000)
-	fmt.Printf("Exercise 1: %d\n", s.Energy())
-	fmt.Printf("Exercise 2: %d\n", s2.Exercise2())
+	allLines := strings.Join(lines, "\n")
+
+	fmt.Printf("Exercise 1: %d\n", NewSpace(allLines).EnergyAfter(1000))
+	fmt.Printf("Exercise 2: %d\n", NewSpace(allLines).PeriodLength())
 }
 
 type Moon struct {
@@ -38,13 +37,10 @@ type four struct {
 	a, b, c, d, va, vb, vc, vd int
 }
 
-func (s *Space) Exercise2() int {
-	seenx := map[four]int{}
-	seeny := map[four]int{}
-	seenz := map[four]int{}
-	seen_x := false
-	seen_y := false
-	seen_z := false
+func (s *Space) PeriodLength() int {
+	xperiod := map[four]bool{}
+	yperiod := map[four]bool{}
+	zperiod := map[four]bool{}
 
 	fx := func() four {
 		return four{
@@ -83,48 +79,94 @@ func (s *Space) Exercise2() int {
 		}
 	}
 
-	seenx[fx()] = 0
-	seeny[fy()] = 0
-	seenz[fz()] = 0
+	xperiod[fx()] = true
+	yperiod[fy()] = true
+	zperiod[fz()] = true
 
-	step := 0
-	for {
+	seen_x := false
+	seen_y := false
+	seen_z := false
+
+	for !(seen_x && seen_y && seen_z) {
 		s.Simulate(1)
-		step++
 		x := fx()
 		y := fy()
 		z := fz()
-		if _, ok := seenx[x]; ok {
+
+		if _, ok := xperiod[x]; ok {
 			seen_x = true
 		} else {
-			seen_x = false
-			seenx[x] = step
+			xperiod[x] = true
 		}
-		if _, ok := seeny[y]; ok {
+		if _, ok := yperiod[y]; ok {
 			seen_y = true
 		} else {
-			seen_y = false
-			seeny[y] = step
+			yperiod[y] = true
 		}
-		if _, ok := seenz[z]; ok {
+		if _, ok := zperiod[z]; ok {
 			seen_z = true
 		} else {
-			seen_z = false
-			seenz[z] = step
-		}
-
-		fmt.Println(seen_x, seen_y, seen_z, step)
-
-		if seen_x && seen_y && seen_z {
-			break
+			zperiod[z] = true
 		}
 	}
 
-	fmt.Println(len(seenx))
-	fmt.Println(len(seeny))
-	fmt.Println(len(seenz))
+	return lcm(len(xperiod), len(yperiod), len(zperiod))
+}
 
-	return 0
+func lcm(a, b, c int) int {
+	max := a
+	if b > max {
+		max = b
+	}
+	if c > max {
+		max = c
+	}
+	lcmValue := 1
+	for _, p := range primes(max) {
+		canBeDivided := true
+		for canBeDivided {
+			canBeDivided = false
+			if a%p == 0 {
+				a /= p
+				canBeDivided = true
+			}
+			if b%p == 0 {
+				b /= p
+				canBeDivided = true
+			}
+			if c%p == 0 {
+				c /= p
+				canBeDivided = true
+			}
+			if canBeDivided {
+				lcmValue *= p
+			}
+		}
+	}
+	return lcmValue
+}
+
+func primes(max int) []int {
+	p := []bool{}
+	for i := 0; i <= max; i++ {
+		p = append(p, true)
+	}
+	p[0] = false
+	p[1] = false
+	for i := 2; i <= max; i++ {
+		if p[i] {
+			for j := i * 2; j <= max; j += i {
+				p[j] = false
+			}
+		}
+	}
+	primes := []int{}
+	for i, v := range p {
+		if v {
+			primes = append(primes, i)
+		}
+	}
+	return primes
 }
 
 func NewMoon(l string) *Moon {
@@ -240,4 +282,9 @@ func (s *Space) Energy() int {
 		te += m.Energy()
 	}
 	return te
+}
+
+func (s *Space) EnergyAfter(rounds int) int {
+	s.Simulate(rounds)
+	return s.Energy()
 }
