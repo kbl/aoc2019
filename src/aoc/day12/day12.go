@@ -4,8 +4,6 @@ import (
 	"aoc"
 	"fmt"
 	"log"
-	"math"
-	"strconv"
 	"strings"
 )
 
@@ -25,59 +23,41 @@ func Main(inputFilePath string) {
 }
 
 type Moon struct {
-	x, y, z    int
-	vx, vy, vz int
+	position [3]int
+	velocity [3]int
 }
 
 func (m *Moon) String() string {
-	return fmt.Sprintf("pos=<x=%d, y=%d, z=%d>, vel=<x=%d, y=%d, z=%d>", m.x, m.y, m.z, m.vx, m.vy, m.vz)
+	return fmt.Sprintf("pos=<x=%d, y=%d, z=%d>, vel=<x=%d, y=%d, z=%d>", m.position[0], m.position[1], m.position[2], m.velocity[0], m.velocity[1], m.velocity[2])
 }
 
-type four struct {
-	a, b, c, d, va, vb, vc, vd int
+type eight struct {
+	a, av, b, bv, c, cv, d, dv int
 }
 
 func (s *Space) PeriodLength() int {
-	xperiod := map[four]bool{}
-	yperiod := map[four]bool{}
-	zperiod := map[four]bool{}
+	xperiod := map[eight]bool{}
+	yperiod := map[eight]bool{}
+	zperiod := map[eight]bool{}
 
-	fx := func() four {
-		return four{
-			s.moons[0].x,
-			s.moons[1].x,
-			s.moons[2].x,
-			s.moons[3].x,
-			s.moons[0].vx,
-			s.moons[1].vx,
-			s.moons[2].vx,
-			s.moons[3].vx,
+	fmaker := func(dimension int) func() eight {
+		return func() eight {
+			return eight{
+				s.moons[0].position[dimension],
+				s.moons[0].velocity[dimension],
+				s.moons[1].position[dimension],
+				s.moons[1].velocity[dimension],
+				s.moons[2].position[dimension],
+				s.moons[2].velocity[dimension],
+				s.moons[3].position[dimension],
+				s.moons[3].velocity[dimension],
+			}
 		}
 	}
-	fy := func() four {
-		return four{
-			s.moons[0].y,
-			s.moons[1].y,
-			s.moons[2].y,
-			s.moons[3].y,
-			s.moons[0].vy,
-			s.moons[1].vy,
-			s.moons[2].vy,
-			s.moons[3].vy,
-		}
-	}
-	fz := func() four {
-		return four{
-			s.moons[0].z,
-			s.moons[1].z,
-			s.moons[2].z,
-			s.moons[3].z,
-			s.moons[0].vz,
-			s.moons[1].vz,
-			s.moons[2].vz,
-			s.moons[3].vz,
-		}
-	}
+
+	fx := fmaker(0)
+	fy := fmaker(1)
+	fz := fmaker(2)
 
 	xperiod[fx()] = true
 	yperiod[fy()] = true
@@ -113,30 +93,23 @@ func (s *Space) PeriodLength() int {
 	return lcm(len(xperiod), len(yperiod), len(zperiod))
 }
 
-func lcm(a, b, c int) int {
-	max := a
-	if b > max {
-		max = b
-	}
-	if c > max {
-		max = c
+func lcm(values ...int) int {
+	max := values[0]
+	for _, v := range values {
+		if v > max {
+			max = v
+		}
 	}
 	lcmValue := 1
-	for _, p := range primes(max) {
+	for _, p := range primes(max / 2) {
 		canBeDivided := true
 		for canBeDivided {
 			canBeDivided = false
-			if a%p == 0 {
-				a /= p
-				canBeDivided = true
-			}
-			if b%p == 0 {
-				b /= p
-				canBeDivided = true
-			}
-			if c%p == 0 {
-				c /= p
-				canBeDivided = true
+			for i := range values {
+				if values[i]%p == 0 {
+					values[i] /= p
+					canBeDivided = true
+				}
 			}
 			if canBeDivided {
 				lcmValue *= p
@@ -170,35 +143,29 @@ func primes(max int) []int {
 }
 
 func NewMoon(l string) *Moon {
-	t := strings.Split(l, "=")
-	x, err := strconv.Atoi(strings.Split(t[1], ",")[0])
+	moon := Moon{}
+	_, err := fmt.Sscanf(l, "<x=%d, y=%d, z=%d>", &moon.position[0], &moon.position[1], &moon.position[2])
 	if err != nil {
 		log.Fatal(err)
 	}
-	y, err := strconv.Atoi(strings.Split(t[2], ",")[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-	z, err := strconv.Atoi(strings.Split(t[3], ">")[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &Moon{x: x, y: y, z: z}
+	return &moon
 }
 
 func (m *Moon) Move() {
-	m.x += m.vx
-	m.y += m.vy
-	m.z += m.vz
+	for dimension := 0; dimension < 3; dimension++ {
+		m.position[dimension] += m.velocity[dimension]
+	}
+}
+
+func abs(i int) int {
+	if i < 0 {
+		return -i
+	}
+	return i
 }
 
 func (m *Moon) Energy() int {
-	return int(
-		math.Abs(float64(m.x))+
-			math.Abs(float64(m.y))+
-			math.Abs(float64(m.z))) * int(math.Abs(float64(m.vx))+
-		math.Abs(float64(m.vy))+
-		math.Abs(float64(m.vz)))
+	return (abs(m.position[0]) + abs(m.position[1]) + abs(m.position[2])) * (abs(m.velocity[0]) + abs(m.velocity[1]) + abs(m.velocity[2]))
 }
 
 type Space struct {
@@ -251,17 +218,17 @@ func (s *Space) Simulate(steps int) {
 			m1 := mp[0]
 			m2 := mp[1]
 
-			v := vel(m1.x, m2.x)
-			m1.vx += v
-			m2.vx -= v
+			v := vel(m1.position[0], m2.position[0])
+			m1.velocity[0] += v
+			m2.velocity[0] -= v
 
-			v = vel(m1.y, m2.y)
-			m1.vy += v
-			m2.vy -= v
+			v = vel(m1.position[1], m2.position[1])
+			m1.velocity[1] += v
+			m2.velocity[1] -= v
 
-			v = vel(m1.z, m2.z)
-			m1.vz += v
-			m2.vz -= v
+			v = vel(m1.position[2], m2.position[2])
+			m1.velocity[2] += v
+			m2.velocity[2] -= v
 		}
 
 		for _, m := range s.moons {
