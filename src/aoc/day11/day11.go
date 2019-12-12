@@ -80,8 +80,8 @@ func (r *Robot) Step() {
 		panic("I'm done!")
 	}
 	var cordColor color = black
-	if v, ok := r.canvas[r.c]; ok {
-		cordColor = v
+	if c, ok := r.canvas[r.c]; ok {
+		cordColor = c
 	}
 	r.ic.AddInput(int(cordColor))
 
@@ -104,36 +104,14 @@ func (r *Robot) Step() {
 	}
 
 	r.canvas[r.c] = color(toColor)
+	r.o = turns[r.o][turn(toTurn)]
+	r.c = cord{r.c.x + moves[r.o][0], r.c.y + moves[r.o][1]}
+}
 
-	newOrientation := turns[r.o][turn(toTurn)]
-	if debug {
-		fmt.Printf("I'm oriented %v, turning %v to %v.\n", sOrientation[r.o], sTurn[turn(toTurn)], sOrientation[newOrientation])
+func (r *Robot) Paint() {
+	for !r.done {
+		r.Step()
 	}
-	r.o = newOrientation
-
-	m := moves[r.o]
-	newCord := cord{r.c.x + m[0], r.c.y + m[1]}
-	if debug {
-		fmt.Printf("Being oriented %v I'm moving from %v to %v.\n", sOrientation[r.o], r.c, newCord)
-	}
-	r.c = newCord
-}
-
-var sTurn = map[turn]string{
-	turnLeft:  " left",
-	turnRight: "right",
-}
-
-var sOrientation = map[orientation]string{
-	up:    "   up",
-	down:  " down",
-	left:  " left",
-	right: "right",
-}
-
-var sColor = map[color]string{
-	white: "#",
-	black: " ",
 }
 
 func main() {
@@ -143,19 +121,16 @@ func main() {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
+
 	ic := intcode.NewIntcode(intcode.NewMemory(lines[0]))
 	r := NewRobot(ic)
-	for !r.done {
-		r.Step()
-	}
+	r.Paint()
 	fmt.Printf("Exercise 1: %d\n", len(r.canvas))
 
 	ic = intcode.NewIntcode(intcode.NewMemory(lines[0]))
 	r = NewRobot(ic)
 	r.canvas[cord{0, 0}] = white
-	for !r.done {
-		r.Step()
-	}
+	r.Paint()
 	fmt.Println("Exercise 2:")
 	printCanvas(r.canvas)
 }
@@ -179,6 +154,11 @@ func printCanvas(canvas map[cord]color) {
 		if c.y < miny {
 			miny = c.y
 		}
+	}
+
+	sColor := map[color]string{
+		white: "▮",
+		black: " ",
 	}
 
 	for y := maxy + 1; y >= miny-1; y-- {
