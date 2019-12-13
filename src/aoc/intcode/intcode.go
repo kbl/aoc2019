@@ -26,23 +26,28 @@ func NewMemory(line string) *Memory {
 	return &Memory{memory}
 }
 
-type Input struct {
+type Input interface {
+	Add(int)
+	Get() int
+}
+
+type dummyInput struct {
 	values        []int
 	inputPosition int
 }
 
-func NewInput() *Input {
-	return &Input{
+func NewInput() Input {
+	return &dummyInput{
 		[]int{},
 		0,
 	}
 }
 
-func (i *Input) Add(value int) {
+func (i *dummyInput) Add(value int) {
 	i.values = append(i.values, value)
 }
 
-func (i *Input) Get() int {
+func (i *dummyInput) Get() int {
 	value := i.values[i.inputPosition]
 	i.inputPosition++
 	return value
@@ -73,7 +78,7 @@ const (
 type Intcode struct {
 	instructionPointer, relativeBase int
 	memory                           *Memory
-	in                               *Input
+	in                               Input
 	out                              int
 }
 
@@ -84,8 +89,19 @@ func NewIntcode(memory *Memory) *Intcode {
 	}
 }
 
+func NewIntcodeInput(memory *Memory, in Input) *Intcode {
+	return &Intcode{
+		memory: memory,
+		in:     in,
+	}
+}
+
 var HaltMode ExitMode = 0
 var OutputMode ExitMode = 1
+
+func (i *Intcode) SetMemory(index, value int) {
+	i.memory.memory[index] = value
+}
 
 func (i *Intcode) AddInput(value int) {
 	i.in.Add(value)
