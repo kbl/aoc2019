@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -17,17 +18,38 @@ func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	reactions := NewReactions(lines)
 
-	fmt.Println("Exercise 1:", reactions.Process())
-
-	// maxOre := 1000000000000
-	// maxFuel := maxOre / reactions.Process(1)
-	// fmt.Println("Exercise 2:", reactions.Process(maxFuel))
+	fmt.Println("Exercise 1:", reactions.OrePerFuel())
+	fmt.Println("Exercise 2:", reactions.MaxFuelPerOre(1000000000000))
 }
 
-func (r Reactions) Process() int {
+func (r Reactions) OrePerFuel() int {
+	return r.Process(1)
+}
+
+func (r Reactions) MaxFuelPerOre(maxOre int) int {
+	fuelMin := 0
+	fuelMax := maxOre
+	fuelIteration := maxOre / 2
+
+	for fuelMin < fuelMax {
+		time.Sleep(1 * time.Millisecond)
+		iterationOre := r.Process(fuelIteration)
+		if iterationOre == maxOre {
+			return fuelIteration
+		} else if iterationOre > maxOre {
+			fuelMax = fuelIteration - 1
+		} else {
+			fuelMin = fuelIteration + 1
+		}
+		fuelIteration = fuelMin + (fuelMax-fuelMin)/2
+	}
+	return fuelIteration - 1
+}
+
+func (r Reactions) Process(amount int) int {
 	required := map[string]int{}
 	for chemical, quantity := range r.r["FUEL"].from {
-		required[chemical] = quantity
+		required[chemical] = quantity * amount
 	}
 
 	anythingRequired := true
@@ -43,16 +65,10 @@ func (r Reactions) Process() int {
 			anythingRequired = true
 			required[required_chemical] -= produced_quantity * multiplier
 			for c, q := range r.r[required_chemical].from {
-				if _, ok := required[c]; ok {
-					required[c] += q * multiplier
-				} else {
-					required[c] = q * multiplier
-				}
+				required[c] += q * multiplier
 			}
 		}
 	}
-
-	fmt.Println(required)
 
 	return required["ORE"]
 }

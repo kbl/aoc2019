@@ -6,8 +6,9 @@ import (
 )
 
 type testCase struct {
-	input    []string
-	expected int
+	input           []string
+	expected        int
+	expectedMaxFuel int
 }
 
 var testCases = []testCase{
@@ -19,6 +20,7 @@ var testCases = []testCase{
 4 C, 1 A => 1 CA
 2 AB, 3 BC, 4 CA => 1 FUEL`, "\n"),
 		165,
+		6323777403,
 	},
 	{strings.Split(`157 ORE => 5 NZVS
 165 ORE => 6 DCFZ
@@ -30,6 +32,7 @@ var testCases = []testCase{
 165 ORE => 2 GPVTF
 3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT`, "\n"),
 		13312,
+		82892753,
 	},
 	{strings.Split(`2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG
 17 NVRVD, 3 JNWZP => 8 VPVL
@@ -44,6 +47,7 @@ var testCases = []testCase{
 1 VJHF, 6 MNCFX => 4 RFSQX
 176 ORE => 6 VJHF`, "\n"),
 		180697,
+		5586022,
 	},
 	{strings.Split(`171 ORE => 8 CNZTR
 7 ZLQW, 3 BMBT, 9 XCVML, 26 XMNCP, 1 WPTQ, 2 MZWV, 1 RJRHP => 4 PLWSL
@@ -63,6 +67,7 @@ var testCases = []testCase{
 7 XCVML => 6 RJRHP
 5 BHXH, 4 VRPVC => 5 LTCX`, "\n"),
 		2210736,
+		460664,
 	},
 	{strings.Split(`118 ORE => 7 GTPZ
 6 RNQJN, 4 NQKVW => 4 DTQRC
@@ -126,16 +131,28 @@ var testCases = []testCase{
 1 KDNT, 1 XZMH, 8 BXGD => 1 KQLT
 2 WJNP => 3 PZFG`, "\n"),
 		579797,
+		2521844,
 	},
 }
 
-func TestProcess(t *testing.T) {
+func TestOrePerFuel(t *testing.T) {
 	for _, tc := range testCases {
 		reactions := NewReactions(tc.input)
-		got := reactions.Process(1)
+		got := reactions.OrePerFuel()
 
 		if got != tc.expected {
-			t.Errorf("reactions.Process() = %d, want %d", got, tc.expected)
+			t.Errorf("reactions.OrePerFuel() = %d, want %d", got, tc.expected)
+		}
+	}
+}
+
+func TestMaxFuelPerOre(t *testing.T) {
+	for _, tc := range testCases {
+		reactions := NewReactions(tc.input)
+		got := reactions.MaxFuelPerOre(1000000000000)
+
+		if got != tc.expectedMaxFuel {
+			t.Errorf("reactions.MaxFuelPerOre() = %d, want %d", got, tc.expectedMaxFuel)
 		}
 	}
 }
