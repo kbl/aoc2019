@@ -32,26 +32,14 @@ func (r Reactions) Process() int {
 			if required_chemical == "ORE" || required_quantity <= 0 {
 				continue
 			}
-			if r.r[required_chemical].quantity <= required_quantity {
-				anythingRequired = true
-				required[required_chemical] -= r.r[required_chemical].quantity
-				for c, q := range r.r[required_chemical].from {
-					if _, ok := required[c]; ok {
-						required[c] += q
-					} else {
-						required[c] = q
-					}
-				}
-			}
-			if r.r[required_chemical].quantity > required_quantity {
-				anythingRequired = true
-				required[required_chemical] -= r.r[required_chemical].quantity
-				for c, q := range r.r[required_chemical].from {
-					if _, ok := required[c]; ok {
-						required[c] += q
-					} else {
-						required[c] = q
-					}
+
+			anythingRequired = true
+			required[required_chemical] -= r.r[required_chemical].quantity
+			for c, q := range r.r[required_chemical].from {
+				if _, ok := required[c]; ok {
+					required[c] += q
+				} else {
+					required[c] = q
 				}
 			}
 		}
