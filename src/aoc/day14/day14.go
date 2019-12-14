@@ -3,6 +3,7 @@ package main
 import (
 	"aoc"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -17,6 +18,10 @@ func Main(inputFilePath string) {
 	reactions := NewReactions(lines)
 
 	fmt.Println("Exercise 1:", reactions.Process())
+
+	// maxOre := 1000000000000
+	// maxFuel := maxOre / reactions.Process(1)
+	// fmt.Println("Exercise 2:", reactions.Process(maxFuel))
 }
 
 func (r Reactions) Process() int {
@@ -32,14 +37,16 @@ func (r Reactions) Process() int {
 			if required_chemical == "ORE" || required_quantity <= 0 {
 				continue
 			}
+			produced_quantity := r.r[required_chemical].quantity
+			multiplier := int(math.Ceil(float64(required_quantity) / float64(produced_quantity)))
 
 			anythingRequired = true
-			required[required_chemical] -= r.r[required_chemical].quantity
+			required[required_chemical] -= produced_quantity * multiplier
 			for c, q := range r.r[required_chemical].from {
 				if _, ok := required[c]; ok {
-					required[c] += q
+					required[c] += q * multiplier
 				} else {
-					required[c] = q
+					required[c] = q * multiplier
 				}
 			}
 		}

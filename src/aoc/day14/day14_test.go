@@ -132,7 +132,7 @@ var testCases = []testCase{
 func TestProcess(t *testing.T) {
 	for _, tc := range testCases {
 		reactions := NewReactions(tc.input)
-		got := reactions.Process()
+		got := reactions.Process(1)
 
 		if got != tc.expected {
 			t.Errorf("reactions.Process() = %d, want %d", got, tc.expected)
