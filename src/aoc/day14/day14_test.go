@@ -1,7 +1,6 @@
 package main
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -126,144 +125,17 @@ var testCases = []testCase{
 15 FCDVQ, 3 MLWN => 4 NBNLC
 1 KDNT, 1 XZMH, 8 BXGD => 1 KQLT
 2 WJNP => 3 PZFG`, "\n"),
-		1,
+		579797,
 	},
 }
 
 func TestProcess(t *testing.T) {
 	for _, tc := range testCases {
 		reactions := NewReactions(tc.input)
-		reactions.Simplify()
 		got := reactions.Process()
 
 		if got != tc.expected {
 			t.Errorf("reactions.Process() = %d, want %d", got, tc.expected)
 		}
-	}
-}
-
-func TestReplaceInplaceFull(t *testing.T) {
-	r1 := Reaction{
-		in:   map[Chemical]int{"A": 3, "B": 3, "C": 5},
-		out:  "D",
-		outv: 5,
-	}
-	r2 := Reaction{
-		in:   map[Chemical]int{"A": 1, "E": 6},
-		out:  "B",
-		outv: 3,
-	}
-
-	r1.ReplaceInplace(r2, true)
-
-	expectedIn := map[Chemical]int{"A": 4, "C": 5, "E": 6}
-
-	if !reflect.DeepEqual(r1.in, expectedIn) {
-		t.Errorf("r.ReplaceInplace().in = %v, want %v", r1.in, expectedIn)
-	}
-}
-
-func TestReplaceInplaceUnderflow(t *testing.T) {
-	r1 := Reaction{
-		in:   map[Chemical]int{"A": 3, "B": 3, "C": 5},
-		out:  "D",
-		outv: 5,
-	}
-	r2 := Reaction{
-		in:   map[Chemical]int{"A": 1, "E": 6},
-		out:  "B",
-		outv: 2,
-	}
-
-	r1.ReplaceInplace(r2, true)
-
-	expectedIn := map[Chemical]int{"A": 4, "B": 1, "C": 5, "E": 6}
-
-	if !reflect.DeepEqual(r1.in, expectedIn) {
-		t.Errorf("r.ReplaceInplace().in = %v, want %v", r1.in, expectedIn)
-	}
-}
-
-func TestReplaceInplaceOverflow(t *testing.T) {
-	r1 := Reaction{
-		in:   map[Chemical]int{"A": 3, "B": 3, "C": 5},
-		out:  "D",
-		outv: 5,
-	}
-	r2 := Reaction{
-		in:   map[Chemical]int{"A": 1, "E": 6},
-		out:  "B",
-		outv: 4,
-	}
-
-	r1.ReplaceInplace(r2, true)
-
-	expectedIn := map[Chemical]int{"A": 3, "B": 3, "C": 5}
-
-	if !reflect.DeepEqual(r1.in, expectedIn) {
-		t.Errorf("r.ReplaceInplace().in = %v, want %v", r1.in, expectedIn)
-	}
-}
-
-func TestReplaceInplaceMultiple(t *testing.T) {
-	r1 := Reaction{
-		in:   map[Chemical]int{"A": 3, "B": 7, "C": 5},
-		out:  "D",
-		outv: 5,
-	}
-	r2 := Reaction{
-		in:   map[Chemical]int{"A": 1, "E": 6},
-		out:  "B",
-		outv: 3,
-	}
-
-	r1.ReplaceInplace(r2, true)
-
-	expectedIn := map[Chemical]int{"A": 5, "B": 1, "C": 5, "E": 12}
-
-	if !reflect.DeepEqual(r1.in, expectedIn) {
-		t.Errorf("r.ReplaceInplace().in = %v, want %v", r1.in, expectedIn)
-	}
-}
-
-func TestReplaceInplacePartFull(t *testing.T) {
-	r1 := Reaction{
-		in:   map[Chemical]int{"A": 3, "B": 2, "C": 5},
-		out:  "D",
-		outv: 5,
-	}
-	r2 := Reaction{
-		in:   map[Chemical]int{"A": 1, "E": 6},
-		out:  "B",
-		outv: 3,
-	}
-
-	r1.ReplaceInplace(r2, false)
-
-	expectedIn := map[Chemical]int{"A": 4, "C": 5, "E": 6}
-
-	if !reflect.DeepEqual(r1.in, expectedIn) {
-		t.Errorf("r.ReplaceInplace().in = %v, want %v", r1.in, expectedIn)
-	}
-}
-
-func TestReplaceInplaceMultipleNotFull(t *testing.T) {
-	r1 := Reaction{
-		in:   map[Chemical]int{"A": 3, "B": 7, "C": 5},
-		out:  "D",
-		outv: 5,
-	}
-	r2 := Reaction{
-		in:   map[Chemical]int{"A": 1, "E": 6},
-		out:  "B",
-		outv: 3,
-	}
-
-	r1.ReplaceInplace(r2, false)
-
-	expectedIn := map[Chemical]int{"A": 6, "C": 5, "E": 18}
-
-	if !reflect.DeepEqual(r1.in, expectedIn) {
-		t.Errorf("r.ReplaceInplace().in = %v, want %v", r1.in, expectedIn)
 	}
 }
