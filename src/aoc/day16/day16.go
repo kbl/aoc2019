@@ -64,7 +64,71 @@ func Phase(iterations int, input string) string {
 	return strings.Join(dStr, "")
 }
 
+func AdvancedPhase(iterations int, input string) string {
+	repeatFactor := 10000
+	numberLength := repeatFactor * len(input)
+	minimalOffset := numberLength / 2
+
+	digits := parse(input)
+	digitsStr := []string{}
+	for _, d := range digits[:7] {
+		digitsStr = append(digitsStr, strconv.Itoa(d))
+	}
+	offset, err := strconv.Atoi(strings.Join(digitsStr, ""))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if offset < minimalOffset {
+		panic(fmt.Sprintf("%d offset is smaller than %d!", offset, minimalOffset))
+	}
+
+	previous := make([]int, numberLength-offset)
+	current := make([]int, numberLength-offset)
+
+	for di := numberLength - 1; di >= offset; di-- {
+		previous[di-offset] = digits[di%len(digits)]
+	}
+	current[len(current)-1] = previous[len(previous)-1]
+
+	for i := 0; i < iterations; i++ {
+		for di := len(current) - 2; di >= 0; di-- {
+			current[di] = (current[di+1] + previous[di]) % 10
+		}
+		previous = current
+	}
+
+	resultStr := []string{}
+	for i := 0; i < 8; i++ {
+		resultStr = append(resultStr, strconv.Itoa(current[i]))
+	}
+
+	return strings.Join(resultStr, "")
+}
+
+func digitValueAfterIteration(digits []int, numberLength, iteration, index int) int {
+	if iteration < 1 {
+		panic(fmt.Sprintf("Illegal iteration value %d!", iteration))
+	}
+
+	previous := make([]int, numberLength-index)
+	current := make([]int, numberLength-index)
+	for di := numberLength - 1; di >= index; di-- {
+		previous[di-index] = digits[di%len(digits)]
+	}
+	current[len(current)-1] = previous[len(previous)-1]
+
+	for i := 0; i < iteration; i++ {
+		for di := len(current) - 2; di >= 0; di-- {
+			current[di] = (current[di+1] + previous[di]) % 10
+		}
+		previous = current
+	}
+
+	return current[0]
+}
+
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	fmt.Printf("Exercise 1: %d\n", Phase(100, lines[0]))
+	fmt.Printf("Exercise 1: %s\n", Phase(100, lines[0]))
+	fmt.Printf("Exercise 2: %s\n", AdvancedPhase(100, lines[0]))
 }

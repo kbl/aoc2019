@@ -95,3 +95,45 @@ func TestPhase(t *testing.T) {
 		}
 	}
 }
+
+func TestDigitValueAfterIteration(t *testing.T) {
+	type TC struct {
+		digits       []int
+		numberLength int
+		index        int
+		iteration    int
+		expected     int
+	}
+
+	tcs := []TC{
+		{[]int{1, 2, 3, 4, 5, 6}, 6, 3, 1, 5},
+		{[]int{1, 2, 3, 4, 5, 6}, 6, 2, 1, 8},
+		{[]int{1, 2, 3, 4, 5, 6}, 6, 2, 2, 0},
+		{[]int{1, 2, 3, 4, 5, 6}, 12, 7, 2, 0},
+		{[]int{1, 2, 3, 4, 5, 6}, 12, 6, 2, 1},
+		{[]int{1, 2, 3, 4, 5, 6}, 12, 3, 2, 6},
+		{[]int{1, 2, 3, 4, 5, 6}, 12, 0, 2, 8},
+	}
+
+	for _, tc := range tcs {
+		got := digitValueAfterIteration(tc.digits, tc.numberLength, tc.iteration, tc.index)
+		if got != tc.expected {
+			t.Errorf("digitValueAfterIteration(%v, %d, %d, %d) = %d, want %d", tc.digits, tc.numberLength, tc.iteration, tc.index, got, tc.expected)
+		}
+	}
+}
+
+func TestAdvancedPhase(t *testing.T) {
+	tcs := [][]string{
+		{"03036732577212944063491565474664", "84462026"},
+		{"02935109699940807407585447034323", "78725270"},
+		{"03081770884921959731165446850517", "53553731"},
+	}
+
+	for _, tc := range tcs {
+		got := AdvancedPhase(100, tc[0])
+		if got != tc[1] {
+			t.Errorf("Phase(100, %s) = %s, want %s", tc[0], got, tc[1])
+		}
+	}
+}
