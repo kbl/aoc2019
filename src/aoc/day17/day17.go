@@ -33,7 +33,6 @@ func (c cord) forward(d direction) cord {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	fmt.Printf("Read %d lines!\n", len(lines))
 	cpu := intcode.NewIntcode(intcode.NewMemory(lines[0]))
 	grid := map[cord]string{}
 	droid := cord{}
@@ -76,17 +75,71 @@ func Main(inputFilePath string) {
 		}
 	}
 
-	fmt.Println("Exercise 1:", intersections(grid), droid)
+	fmt.Println("Exercise 1:", intersections(grid))
 
 	cpu = intcode.NewIntcode(intcode.NewMemory(lines[0]))
 	route := findRoute(droid, grid)
 	fmt.Println(route)
-
+	// manual split
+	// [R 8 L 4 R 4 R 10 R 8 R 8 L 4 R 4 R 10 R 8 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 R 10 R 4 R 4 R 8 L 4 R 4 R 10 R 8]
+	// A =  R 8 L 4 R 4 R 10 R 8
+	// [A                    A                    L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 R 10 R 4 R 4 A                   ]
+	// B = L 12 L 12 R 8 R 8
+	// [A                    A                    B                 R 10 R 4 R 4 B                 R 10 R 4 R 4 B                 R 10 R 4 R 4 R 10 R 4 R 4 A                   ]
+	// C = R 10 R 4 R 4
+	// [A                    A                    B                 C            B                 C            B                 C            C            A                   ]
 	cpu.SetMemory(0, 2)
-}
+	functions := map[string][]string{
+		"A": []string{"R", "8", "L", "4", "R", "4", "R", "10", "R", "8"},
+		"B": []string{"L", "12", "L", "12", "R", "8", "R", "8"},
+		"C": []string{"R", "10", "R", "4", "R", "4"},
+	}
+	mainFunction := []string{"A", "A", "B", "C", "B", "C", "B", "C", "C", "A"}
 
-[R 8 L 4 R 4 R 10 R 8 R 8 L 4 R 4 R 10 R 8 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 R 10 R 4 R 4 R 8 L 4 R 4 R 10 R]
-[R 8 L 4 R 4 R 10 R 8 R 8 L 4 R 4 R 10 R 8 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 L 12 L 12 R 8 R 8 R 10 R 4 R 4 R 10 R 4 R 4 R 8 L 4 R 4 R 10 R]
+	toAscii := func(str []string) []int {
+		ascii := []int{}
+		for i, s := range str {
+			for _, c := range s {
+				ascii = append(ascii, int(c))
+			}
+			if i < len(str)-1 {
+				ascii = append(ascii, ',')
+			}
+		}
+		return ascii
+	}
+
+	for _, v := range toAscii(mainFunction) {
+		cpu.AddInput(v)
+	}
+	cpu.AddInput(int('\n'))
+
+	for _, v := range toAscii(functions["A"]) {
+		cpu.AddInput(v)
+	}
+	cpu.AddInput(int('\n'))
+
+	for _, v := range toAscii(functions["B"]) {
+		cpu.AddInput(v)
+	}
+	cpu.AddInput(int('\n'))
+
+	for _, v := range toAscii(functions["C"]) {
+		cpu.AddInput(v)
+	}
+	cpu.AddInput(int('\n'))
+
+	cpu.AddInput(int('n'))
+	cpu.AddInput(int('\n'))
+
+	for {
+		o, m := cpu.Output()
+		if m == intcode.HaltMode {
+			fmt.Println("Exercise 2:", o)
+			break
+		}
+	}
+}
 
 const (
 	north = "^"
@@ -162,7 +215,7 @@ func findRoute(droid cord, grid map[cord]string) []string {
 			}
 			sequence = append(sequence, right)
 		} else {
-			return sequence
+			return append(sequence, strconv.Itoa(moved))
 		}
 	}
 }
