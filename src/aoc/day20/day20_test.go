@@ -6,14 +6,12 @@ import (
 )
 
 type testCase struct {
-	maze            string
-	vertices, edges int
-	entrances       map[Vertex]cord
-	shortestPath    int
+	maze                  string
+	vertices, edges       int
+	entrances             map[Vertex]cord
+	shortestPath          int
+	recursiveShortestPath int
 }
-
-//        11111111112222222222333333
-//2345678901234567890123456789012345
 
 var testCases = []testCase{
 	testCase{
@@ -48,7 +46,8 @@ FG..#########.....#
 			Vertex{"FG", inner}: cord{11, 12},
 			Vertex{"ZZ", outer}: cord{13, 16},
 		},
-		shortestPath: 23,
+		shortestPath:          23,
+		recursiveShortestPath: 31,
 	},
 	testCase{
 		maze: `                   A               
@@ -114,7 +113,81 @@ YN......#               VT..#....QG
 			Vertex{"YN", inner}: cord{26, 13},
 			Vertex{"ZZ", outer}: cord{2, 17},
 		},
-		shortestPath: 58,
+		shortestPath:          58,
+		recursiveShortestPath: -1,
+	},
+	testCase{
+		maze: `             Z L X W       C                 
+             Z P Q B       K                 
+  ###########.#.#.#.#######.###############  
+  #...#.......#.#.......#.#.......#.#.#...#  
+  ###.#.#.#.#.#.#.#.###.#.#.#######.#.#.###  
+  #.#...#.#.#...#.#.#...#...#...#.#.......#  
+  #.###.#######.###.###.#.###.###.#.#######  
+  #...#.......#.#...#...#.............#...#  
+  #.#########.#######.#.#######.#######.###  
+  #...#.#    F       R I       Z    #.#.#.#  
+  #.###.#    D       E C       H    #.#.#.#  
+  #.#...#                           #...#.#  
+  #.###.#                           #.###.#  
+  #.#....OA                       WB..#.#..ZH
+  #.###.#                           #.#.#.#  
+CJ......#                           #.....#  
+  #######                           #######  
+  #.#....CK                         #......IC
+  #.###.#                           #.###.#  
+  #.....#                           #...#.#  
+  ###.###                           #.#.#.#  
+XF....#.#                         RF..#.#.#  
+  #####.#                           #######  
+  #......CJ                       NM..#...#  
+  ###.#.#                           #.###.#  
+RE....#.#                           #......RF
+  ###.###        X   X       L      #.#.#.#  
+  #.....#        F   Q       P      #.#.#.#  
+  ###.###########.###.#######.#########.###  
+  #.....#...#.....#.......#...#.....#.#...#  
+  #####.#.###.#######.#######.###.###.#.#.#  
+  #.......#.......#.#.#.#.#...#...#...#.#.#  
+  #####.###.#####.#.#.#.#.###.###.#.###.###  
+  #.......#.....#.#...#...............#...#  
+  #############.#.#.###.###################  
+               A O F   N                     
+               A A D   M                     `,
+		vertices: 15,
+		edges:    21,
+		entrances: map[Vertex]cord{
+			Vertex{"AA", outer}: cord{15, 34},
+			Vertex{"CJ", outer}: cord{2, 15},
+			Vertex{"CJ", inner}: cord{8, 23},
+			Vertex{"CK", outer}: cord{27, 2},
+			Vertex{"CK", inner}: cord{8, 17},
+			Vertex{"FD", outer}: cord{19, 34},
+			Vertex{"FD", inner}: cord{13, 8},
+			Vertex{"IC", outer}: cord{42, 17},
+			Vertex{"IC", inner}: cord{23, 8},
+			Vertex{"LP", outer}: cord{15, 2},
+			Vertex{"LP", inner}: cord{29, 28},
+			Vertex{"NM", outer}: cord{23, 34},
+			Vertex{"NM", inner}: cord{36, 23},
+			Vertex{"OA", outer}: cord{17, 34},
+			Vertex{"OA", inner}: cord{8, 13},
+			Vertex{"RE", outer}: cord{2, 25},
+			Vertex{"RE", inner}: cord{21, 8},
+			Vertex{"RF", outer}: cord{42, 25},
+			Vertex{"RF", inner}: cord{36, 21},
+			Vertex{"WB", outer}: cord{19, 2},
+			Vertex{"WB", inner}: cord{36, 13},
+			Vertex{"XF", outer}: cord{2, 21},
+			Vertex{"XF", inner}: cord{17, 28},
+			Vertex{"XQ", outer}: cord{17, 2},
+			Vertex{"XQ", inner}: cord{21, 28},
+			Vertex{"ZH", outer}: cord{42, 13},
+			Vertex{"ZH", inner}: cord{31, 8},
+			Vertex{"ZZ", outer}: cord{13, 2},
+		},
+		shortestPath:          77,
+		recursiveShortestPath: 396,
 	},
 }
 
@@ -132,6 +205,11 @@ func TestSomething(t *testing.T) {
 		}
 		if g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}) != tc.shortestPath {
 			t.Errorf("g.ShortestPath(AA, ZZ) = %d, want %d", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}), tc.shortestPath)
+		}
+		if tc.recursiveShortestPath != -1 {
+			if g.RecursiveShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}) != tc.recursiveShortestPath {
+				t.Errorf("g.RecursiveShortestPath(AA, ZZ) = %d, want %d", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}), tc.recursiveShortestPath)
+			}
 		}
 	}
 }

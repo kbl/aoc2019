@@ -22,7 +22,8 @@ func main() {
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	g := NewGraph(strings.Join(lines, "\n"))
-	fmt.Println("Exercise 1", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}))
+	fmt.Println("Exercise 1:", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}))
+	fmt.Println("Exercise 2:", g.RecursiveShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}))
 }
 
 type side int
@@ -257,6 +258,31 @@ func (t trails) Swap(i, j int) {
 }
 
 func (g *Graph) ShortestPath(start, end Vertex) int {
+	visited := map[Vertex]int{start: 0}
+	queue := trails{}
+	for v, l := range g.dummyEdges[start.v] {
+		queue = append(queue, trail{v, l})
+	}
+
+	for len(queue) > 0 {
+		sort.Sort(queue)
+		current := queue[0]
+		queue = queue[1:]
+
+		if _, ok := visited[current.end]; ok {
+			continue
+		}
+		visited[current.end] = current.distance
+
+		for v, l := range g.dummyEdges[current.end.v] {
+			queue = append(queue, trail{v, current.distance + l})
+		}
+	}
+
+	return visited[end] - 1
+}
+
+func (g *Graph) RecursiveShortestPath(start, end Vertex) int {
 	visited := map[Vertex]int{start: 0}
 	queue := trails{}
 	for v, l := range g.dummyEdges[start.v] {
