@@ -26,11 +26,9 @@ func Main(inputFilePath string) {
 	fmt.Println("Exercise 2:", g.RecursiveShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}))
 }
 
-type side int
-
 type Vertex struct {
-	v string
-	s side
+	name string
+	side int
 }
 type Edge struct {
 	v1, v2 Vertex
@@ -179,24 +177,24 @@ func NewGraph(maze string) *Graph {
 	ctv := map[cord]Vertex{}
 
 	for v, end := range m.findEntrances() {
-		g.Vertices[v.v] = true
+		g.Vertices[v.name] = true
 		ctv[end] = v
 	}
 
 	for start, vertex := range ctv {
 		for otherVertex, length := range findEdges(m.m, start, vertex, ctv) {
 			edge := Edge{vertex, otherVertex}
-			if otherVertex.v > vertex.v {
+			if otherVertex.name > vertex.name {
 				edge = Edge{otherVertex, vertex}
 			}
 			if e, ok := g.Edges[edge]; ok && e != length {
 				panic("Those lenghts should be equal!")
 			}
 			g.Edges[edge] = length
-			if m, ok := g.dummyEdges[vertex.v]; ok {
+			if m, ok := g.dummyEdges[vertex.name]; ok {
 				m[otherVertex] = length
 			} else {
-				g.dummyEdges[vertex.v] = map[Vertex]int{otherVertex: length}
+				g.dummyEdges[vertex.name] = map[Vertex]int{otherVertex: length}
 			}
 		}
 	}
@@ -242,6 +240,7 @@ func findEdges(g map[cord]rune, start cord, v1 Vertex, ctv map[cord]Vertex) map[
 type trail struct {
 	end      Vertex
 	distance int
+	level    int
 }
 type trails []trail
 
@@ -260,8 +259,8 @@ func (t trails) Swap(i, j int) {
 func (g *Graph) ShortestPath(start, end Vertex) int {
 	visited := map[Vertex]int{start: 0}
 	queue := trails{}
-	for v, l := range g.dummyEdges[start.v] {
-		queue = append(queue, trail{v, l})
+	for v, l := range g.dummyEdges[start.name] {
+		queue = append(queue, trail{v, l, 0})
 	}
 
 	for len(queue) > 0 {
@@ -274,8 +273,8 @@ func (g *Graph) ShortestPath(start, end Vertex) int {
 		}
 		visited[current.end] = current.distance
 
-		for v, l := range g.dummyEdges[current.end.v] {
-			queue = append(queue, trail{v, current.distance + l})
+		for v, l := range g.dummyEdges[current.end.name] {
+			queue = append(queue, trail{v, current.distance + l, 0})
 		}
 	}
 
@@ -283,26 +282,52 @@ func (g *Graph) ShortestPath(start, end Vertex) int {
 }
 
 func (g *Graph) RecursiveShortestPath(start, end Vertex) int {
-	visited := map[Vertex]int{start: 0}
-	queue := trails{}
-	for v, l := range g.dummyEdges[start.v] {
-		queue = append(queue, trail{v, l})
+	return -1
+	type lvertex struct {
+		v     Vertex
+		level int
 	}
 
+	visited := map[lvertex]int{}
+	queue := trails{trail{start, 0, 0}}
+
 	for len(queue) > 0 {
+		fmt.Println()
+		fmt.Println("visited", visited)
 		sort.Sort(queue)
 		current := queue[0]
 		queue = queue[1:]
+		fmt.Println(current, queue)
+		if current.end.name == "ZZ" {
+			return current.distance
+		}
+		if current.level < 0 {
+			panic("level")
+		}
+		if current.distance > 400 {
+			panic("distance")
+		}
 
-		if _, ok := visited[current.end]; ok {
+		if _, ok := visited[lvertex{current.end, current.level}]; ok {
 			continue
 		}
-		visited[current.end] = current.distance
+		visited[lvertex{current.end, current.level}] = current.distance
 
-		for v, l := range g.dummyEdges[current.end.v] {
-			queue = append(queue, trail{v, current.distance + l})
+		for v, length := range g.dummyEdges[current.end.name] {
+			if current.level == 0 && v.side == outer && v.name == "ZZ" {
+				continue
+			}
+			if current.level > 0 && (v.name == "AA" || v.name == "ZZ") {
+				continue
+			}
+			levelMod := 1
+			if v.side == outer {
+				levelMod = -1
+			}
+			queue = append(queue, trail{v, current.distance + length, current.level + levelMod})
 		}
+		fmt.Println("queue", queue)
 	}
 
-	return visited[end] - 1
+	return visited[lvertex{end, 0}] - 1
 }

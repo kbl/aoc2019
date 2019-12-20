@@ -47,7 +47,7 @@ FG..#########.....#
 			Vertex{"ZZ", outer}: cord{13, 16},
 		},
 		shortestPath:          23,
-		recursiveShortestPath: 31,
+		recursiveShortestPath: 27,
 	},
 	testCase{
 		maze: `                   A               
@@ -208,7 +208,7 @@ func TestSomething(t *testing.T) {
 		}
 		if tc.recursiveShortestPath != -1 {
 			if g.RecursiveShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}) != tc.recursiveShortestPath {
-				t.Errorf("g.RecursiveShortestPath(AA, ZZ) = %d, want %d", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}), tc.recursiveShortestPath)
+				t.Errorf("g.RecursiveShortestPath(AA, ZZ) = %d, want %d", g.RecursiveShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}), tc.recursiveShortestPath)
 			}
 		}
 	}
