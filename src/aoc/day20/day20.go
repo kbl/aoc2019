@@ -3,6 +3,7 @@ package main
 import (
 	"aoc"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -17,7 +18,8 @@ func main() {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	fmt.Printf("Read %d lines!\n", len(lines))
+	g := NewGraph(strings.Join(lines, "\n"))
+	fmt.Println(g.ShortestPath("AA", "ZZ"))
 }
 
 type Vertex string
@@ -28,23 +30,19 @@ type cord struct {
 }
 
 func (c cord) adjacent() []cord {
-	a := []cord{
-		cord{c.x + 1, c.y},
-		cord{c.x, c.y + 1},
+	return []cord{
+		{c.x + 1, c.y},
+		{c.x, c.y + 1},
+		{c.x - 1, c.y},
+		{c.x, c.y - 1},
 	}
-	if c.x > 0 {
-		a = append(a, cord{c.x - 1, c.y})
-	}
-	if c.y > 0 {
-		a = append(a, cord{c.x, c.y - 1})
-	}
-	return a
 }
 
 type Graph struct {
-	Edges     map[Edge]int
-	Vertices  map[Vertex]bool
-	entrances map[Vertex][]cord
+	Edges      map[Edge]int
+	dummyEdges map[Vertex]map[Vertex]int
+	Vertices   map[Vertex]bool
+	entrances  map[Vertex][]cord
 }
 
 type maze struct {
@@ -161,9 +159,10 @@ func NewGraph(maze string) *Graph {
 	m := newMaze(maze)
 
 	g := Graph{
-		Edges:     map[Edge]int{},
-		Vertices:  map[Vertex]bool{},
-		entrances: m.findEntrances(),
+		Edges:      map[Edge]int{},
+		dummyEdges: map[Vertex]map[Vertex]int{},
+		Vertices:   map[Vertex]bool{},
+		entrances:  m.findEntrances(),
 	}
 
 	ctv := map[cord]Vertex{}
@@ -185,6 +184,11 @@ func NewGraph(maze string) *Graph {
 				panic("Those lenghts should be equal!")
 			}
 			g.Edges[edge] = length
+			if m, ok := g.dummyEdges[vertex]; ok {
+				m[otherVertex] = length
+			} else {
+				g.dummyEdges[vertex] = map[Vertex]int{otherVertex: length}
+			}
 		}
 	}
 
@@ -192,13 +196,79 @@ func NewGraph(maze string) *Graph {
 }
 
 func findEdges(g map[cord]rune, start cord, v1 Vertex, ctv map[cord]Vertex) map[Vertex]int {
+	edges := map[Vertex]int{}
 	distances := map[cord]int{start: 1}
 	toVisit := []cord{start}
+
 	for len(toVisit) > 0 {
 		current := toVisit[0]
 		toVisit = toVisit[1:]
 
-		fmt.Println(distances, current)
+		for _, a := range current.adjacent() {
+			valid := g[a] == path
+			for _, tv := range toVisit {
+				if a == tv {
+					valid = false
+					break
+				}
+			}
+			if _, ok := distances[a]; ok {
+				valid = false
+			}
+
+			if valid {
+				toVisit = append(toVisit, a)
+				distances[a] = distances[current] + 1
+			}
+		}
+
+		if v2, ok := ctv[current]; ok && v2 != v1 {
+			edges[v2] = distances[current]
+			continue
+		}
 	}
-	return map[Vertex]int{}
+	return edges
+}
+
+type trail struct {
+	end      Vertex
+	distance int
+}
+type trails []trail
+
+func (t trails) Len() int {
+	return len(t)
+}
+
+func (t trails) Less(i, j int) bool {
+	return t[i].distance < t[j].distance
+}
+
+func (t trails) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+
+func (g *Graph) ShortestPath(start, end Vertex) int {
+	visited := map[Vertex]int{start: 0}
+	queue := trails{}
+	for v, l := range g.dummyEdges[start] {
+		queue = append(queue, trail{v, l})
+	}
+
+	for len(queue) > 0 {
+		sort.Sort(queue)
+		current := queue[0]
+		queue = queue[1:]
+
+		if _, ok := visited[current.end]; ok {
+			continue
+		}
+		visited[current.end] = current.distance
+
+		for v, l := range g.dummyEdges[current.end] {
+			queue = append(queue, trail{v, current.distance + l})
+		}
+	}
+
+	return visited[end] - 1
 }
