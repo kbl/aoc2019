@@ -86,7 +86,7 @@ YN......#               VT..#....QG
            B   J   C               
            U   P   P               `,
 		vertices: 12,
-		edges:    0,
+		edges:    18,
 		entrances: map[Vertex][]cord{
 			"AA": []cord{{19, 2}},
 			"AS": []cord{{32, 17}, {17, 8}},
@@ -106,7 +106,7 @@ YN......#               VT..#....QG
 }
 
 func TestSomething(t *testing.T) {
-	for _, tc := range testCases[:1] {
+	for _, tc := range testCases {
 		g := NewGraph(tc.maze)
 		if len(g.Edges) != tc.edges {
 			t.Errorf("len(g.Edges) = %d, want %d", len(g.Edges), tc.edges)

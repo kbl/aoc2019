@@ -23,7 +23,9 @@ func Main(inputFilePath string) {
 }
 
 type Vertex string
-type Edge [2]Vertex
+type Edge struct {
+	v1, v2 Vertex
+}
 
 type cord struct {
 	x, y int
