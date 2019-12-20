@@ -8,7 +8,7 @@ import (
 type testCase struct {
 	maze            string
 	vertices, edges int
-	entrances       map[Vertex][]cord
+	entrances       map[Vertex]cord
 	shortestPath    int
 }
 
@@ -38,12 +38,15 @@ FG..#########.....#
              Z       `,
 		vertices: 5,
 		edges:    8,
-		entrances: map[Vertex][]cord{
-			"AA": []cord{{9, 2}},
-			"BC": []cord{{2, 8}, {9, 6}},
-			"DE": []cord{{2, 13}, {6, 10}},
-			"FG": []cord{{2, 15}, {11, 12}},
-			"ZZ": []cord{{13, 16}},
+		entrances: map[Vertex]cord{
+			Vertex{"AA", outer}: cord{9, 2},
+			Vertex{"BC", outer}: cord{2, 8},
+			Vertex{"BC", inner}: cord{9, 6},
+			Vertex{"DE", outer}: cord{2, 13},
+			Vertex{"DE", inner}: cord{6, 10},
+			Vertex{"FG", outer}: cord{2, 15},
+			Vertex{"FG", inner}: cord{11, 12},
+			Vertex{"ZZ", outer}: cord{13, 16},
 		},
 		shortestPath: 23,
 	},
@@ -87,19 +90,29 @@ YN......#               VT..#....QG
            U   P   P               `,
 		vertices: 12,
 		edges:    18,
-		entrances: map[Vertex][]cord{
-			"AA": []cord{{19, 2}},
-			"AS": []cord{{32, 17}, {17, 8}},
-			"BU": []cord{{11, 34}, {26, 21}},
-			"CP": []cord{{19, 34}, {21, 8}},
-			"DI": []cord{{2, 15}, {8, 21}},
-			"JO": []cord{{2, 19}, {13, 28}},
-			"JP": []cord{{15, 34}, {21, 28}},
-			"LF": []cord{{32, 21}, {15, 28}},
-			"QG": []cord{{32, 23}, {26, 17}},
-			"VT": []cord{{32, 11}, {26, 23}},
-			"YN": []cord{{2, 23}, {26, 13}},
-			"ZZ": []cord{{2, 17}},
+		entrances: map[Vertex]cord{
+			Vertex{"AA", outer}: cord{19, 2},
+			Vertex{"AS", outer}: cord{32, 17},
+			Vertex{"AS", inner}: cord{17, 8},
+			Vertex{"BU", outer}: cord{11, 34},
+			Vertex{"BU", inner}: cord{26, 21},
+			Vertex{"CP", outer}: cord{19, 34},
+			Vertex{"CP", inner}: cord{21, 8},
+			Vertex{"DI", outer}: cord{2, 15},
+			Vertex{"DI", inner}: cord{8, 21},
+			Vertex{"JO", outer}: cord{2, 19},
+			Vertex{"JO", inner}: cord{13, 28},
+			Vertex{"JP", outer}: cord{15, 34},
+			Vertex{"JP", inner}: cord{21, 28},
+			Vertex{"LF", outer}: cord{32, 21},
+			Vertex{"LF", inner}: cord{15, 28},
+			Vertex{"QG", outer}: cord{32, 23},
+			Vertex{"QG", inner}: cord{26, 17},
+			Vertex{"VT", outer}: cord{32, 11},
+			Vertex{"VT", inner}: cord{26, 23},
+			Vertex{"YN", outer}: cord{2, 23},
+			Vertex{"YN", inner}: cord{26, 13},
+			Vertex{"ZZ", outer}: cord{2, 17},
 		},
 		shortestPath: 58,
 	},
@@ -117,8 +130,8 @@ func TestSomething(t *testing.T) {
 		if !reflect.DeepEqual(g.entrances, tc.entrances) {
 			t.Errorf("g.entrances = %v, want %v", g.entrances, tc.entrances)
 		}
-		if g.ShortestPath("AA", "ZZ") != tc.shortestPath {
-			t.Errorf("g.ShortestPath(AA, ZZ) = %d, want %d", g.ShortestPath("AA", "ZZ"), tc.shortestPath)
+		if g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}) != tc.shortestPath {
+			t.Errorf("g.ShortestPath(AA, ZZ) = %d, want %d", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}), tc.shortestPath)
 		}
 	}
 }

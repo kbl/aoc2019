@@ -11,6 +11,9 @@ const frame = 2
 const wall = '#'
 const path = '.'
 
+const outer = 0
+const inner = 1
+
 func main() {
 	inputFilePath := aoc.InputArg()
 	Main(inputFilePath)
@@ -19,10 +22,15 @@ func main() {
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	g := NewGraph(strings.Join(lines, "\n"))
-	fmt.Println(g.ShortestPath("AA", "ZZ"))
+	fmt.Println("Exercise 1", g.ShortestPath(Vertex{"AA", outer}, Vertex{"ZZ", outer}))
 }
 
-type Vertex string
+type side int
+
+type Vertex struct {
+	v string
+	s side
+}
 type Edge struct {
 	v1, v2 Vertex
 }
@@ -42,9 +50,9 @@ func (c cord) adjacent() []cord {
 
 type Graph struct {
 	Edges      map[Edge]int
-	dummyEdges map[Vertex]map[Vertex]int
-	Vertices   map[Vertex]bool
-	entrances  map[Vertex][]cord
+	dummyEdges map[string]map[Vertex]int
+	Vertices   map[string]bool
+	entrances  map[Vertex]cord
 }
 
 type maze struct {
@@ -78,16 +86,16 @@ func (m *maze) findDonutWidth() int {
 	}
 }
 
-func (m *maze) findEntrances() map[Vertex][]cord {
+func (m *maze) findEntrances() map[Vertex]cord {
 	dw := m.findDonutWidth()
-	entrances := map[Vertex][]cord{}
+	entrances := map[Vertex]cord{}
 
 	// entrances on horizontal top outer edge
 	y := frame
 	for x := frame; x < m.lenX-frame; x++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x, y - 2}], m.m[cord{x, y - 1}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x, y - 2}], m.m[cord{x, y - 1}]}), outer}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -95,8 +103,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	y = m.lenY - frame - 1
 	for x := frame; x < m.lenX-frame; x++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x, y + 1}], m.m[cord{x, y + 2}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x, y + 1}], m.m[cord{x, y + 2}]}), outer}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -104,8 +112,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	x := frame
 	for y := frame; y < m.lenY-frame; y++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x - 2, y}], m.m[cord{x - 1, y}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x - 2, y}], m.m[cord{x - 1, y}]}), outer}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -113,8 +121,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	x = m.lenX - frame - 1
 	for y := frame; y < m.lenY-frame; y++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x + 1, y}], m.m[cord{x + 2, y}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x + 1, y}], m.m[cord{x + 2, y}]}), outer}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -122,8 +130,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	y = frame + dw - 1
 	for x := frame + dw; x < m.lenX-frame-dw; x++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x, y + 1}], m.m[cord{x, y + 2}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x, y + 1}], m.m[cord{x, y + 2}]}), inner}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -131,8 +139,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	y = m.lenY - frame - dw
 	for x := frame + dw; x < m.lenX-frame-dw; x++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x, y - 2}], m.m[cord{x, y - 1}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x, y - 2}], m.m[cord{x, y - 1}]}), inner}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -140,8 +148,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	x = frame + dw - 1
 	for y := frame + dw; y < m.lenY-frame-dw; y++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x + 1, y}], m.m[cord{x + 2, y}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x + 1, y}], m.m[cord{x + 2, y}]}), inner}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -149,8 +157,8 @@ func (m *maze) findEntrances() map[Vertex][]cord {
 	x = m.lenX - frame - dw
 	for y := frame + dw; y < m.lenY-frame-dw; y++ {
 		if m.m[cord{x, y}] == path {
-			v := Vertex([]rune{m.m[cord{x - 2, y}], m.m[cord{x - 1, y}]})
-			entrances[v] = append(entrances[v], cord{x, y})
+			v := Vertex{string([]rune{m.m[cord{x - 2, y}], m.m[cord{x - 1, y}]}), inner}
+			entrances[v] = cord{x, y}
 		}
 	}
 
@@ -162,34 +170,32 @@ func NewGraph(maze string) *Graph {
 
 	g := Graph{
 		Edges:      map[Edge]int{},
-		dummyEdges: map[Vertex]map[Vertex]int{},
-		Vertices:   map[Vertex]bool{},
+		dummyEdges: map[string]map[Vertex]int{},
+		Vertices:   map[string]bool{},
 		entrances:  m.findEntrances(),
 	}
 
 	ctv := map[cord]Vertex{}
 
-	for v, ends := range m.findEntrances() {
-		g.Vertices[v] = true
-		for _, e := range ends {
-			ctv[e] = v
-		}
+	for v, end := range m.findEntrances() {
+		g.Vertices[v.v] = true
+		ctv[end] = v
 	}
 
 	for start, vertex := range ctv {
 		for otherVertex, length := range findEdges(m.m, start, vertex, ctv) {
 			edge := Edge{vertex, otherVertex}
-			if otherVertex > vertex {
+			if otherVertex.v > vertex.v {
 				edge = Edge{otherVertex, vertex}
 			}
 			if e, ok := g.Edges[edge]; ok && e != length {
 				panic("Those lenghts should be equal!")
 			}
 			g.Edges[edge] = length
-			if m, ok := g.dummyEdges[vertex]; ok {
+			if m, ok := g.dummyEdges[vertex.v]; ok {
 				m[otherVertex] = length
 			} else {
-				g.dummyEdges[vertex] = map[Vertex]int{otherVertex: length}
+				g.dummyEdges[vertex.v] = map[Vertex]int{otherVertex: length}
 			}
 		}
 	}
@@ -253,7 +259,7 @@ func (t trails) Swap(i, j int) {
 func (g *Graph) ShortestPath(start, end Vertex) int {
 	visited := map[Vertex]int{start: 0}
 	queue := trails{}
-	for v, l := range g.dummyEdges[start] {
+	for v, l := range g.dummyEdges[start.v] {
 		queue = append(queue, trail{v, l})
 	}
 
@@ -267,7 +273,7 @@ func (g *Graph) ShortestPath(start, end Vertex) int {
 		}
 		visited[current.end] = current.distance
 
-		for v, l := range g.dummyEdges[current.end] {
+		for v, l := range g.dummyEdges[current.end.v] {
 			queue = append(queue, trail{v, current.distance + l})
 		}
 	}
