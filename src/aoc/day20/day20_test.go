@@ -7,7 +7,6 @@ import (
 
 type testCase struct {
 	maze                  string
-	vertices, edges       int
 	entrances             map[Vertex]cord
 	shortestPath          int
 	recursiveShortestPath int
@@ -34,8 +33,6 @@ FG..#########.....#
   ###########.#####  
              Z       
              Z       `,
-		vertices: 5,
-		edges:    8,
 		entrances: map[Vertex]cord{
 			Vertex{"AA", outer}: cord{9, 2},
 			Vertex{"BC", outer}: cord{2, 8},
@@ -87,8 +84,6 @@ YN......#               VT..#....QG
   #########.###.###.#############  
            B   J   C               
            U   P   P               `,
-		vertices: 12,
-		edges:    18,
 		entrances: map[Vertex]cord{
 			Vertex{"AA", outer}: cord{19, 2},
 			Vertex{"AS", outer}: cord{32, 17},
@@ -154,8 +149,6 @@ RE....#.#                           #......RF
   #############.#.#.###.###################  
                A O F   N                     
                A A D   M                     `,
-		vertices: 15,
-		edges:    21,
 		entrances: map[Vertex]cord{
 			Vertex{"AA", outer}: cord{15, 34},
 			Vertex{"CJ", outer}: cord{2, 15},
@@ -194,12 +187,6 @@ RE....#.#                           #......RF
 func TestSomething(t *testing.T) {
 	for _, tc := range testCases {
 		g := NewGraph(tc.maze)
-		if len(g.Edges) != tc.edges {
-			t.Errorf("len(g.Edges) = %d, want %d", len(g.Edges), tc.edges)
-		}
-		if len(g.Vertices) != tc.vertices {
-			t.Errorf("len(g.Vertices) = %d, want %d", len(g.Vertices), tc.vertices)
-		}
 		if !reflect.DeepEqual(g.entrances, tc.entrances) {
 			t.Errorf("g.entrances = %v, want %v", g.entrances, tc.entrances)
 		}

@@ -48,7 +48,7 @@ func (c cord) adjacent() []cord {
 }
 
 type Graph struct {
-	Edges      map[Edge]int
+	Edges      map[Vertex]map[Vertex]int
 	dummyEdges map[string]map[Vertex]int
 	Vertices   map[string]bool
 	entrances  map[Vertex]cord
@@ -168,7 +168,7 @@ func NewGraph(maze string) *Graph {
 	m := newMaze(maze)
 
 	g := Graph{
-		Edges:      map[Edge]int{},
+		Edges:      map[Vertex]map[Vertex]int{},
 		dummyEdges: map[string]map[Vertex]int{},
 		Vertices:   map[string]bool{},
 		entrances:  m.findEntrances(),
@@ -183,14 +183,11 @@ func NewGraph(maze string) *Graph {
 
 	for start, vertex := range ctv {
 		for otherVertex, length := range findEdges(m.m, start, vertex, ctv) {
-			edge := Edge{vertex, otherVertex}
-			if otherVertex.name > vertex.name {
-				edge = Edge{otherVertex, vertex}
+			if m, ok := g.Edges[vertex]; ok {
+				m[otherVertex] = length
+			} else {
+				g.Edges[vertex] = map[Vertex]int{otherVertex: length}
 			}
-			if e, ok := g.Edges[edge]; ok && e != length {
-				panic("Those lenghts should be equal!")
-			}
-			g.Edges[edge] = length
 			if m, ok := g.dummyEdges[vertex.name]; ok {
 				m[otherVertex] = length
 			} else {
