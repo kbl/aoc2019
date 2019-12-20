@@ -44,7 +44,7 @@ FG..#########.....#
 			Vertex{"ZZ", outer}: cord{13, 16},
 		},
 		shortestPath:          23,
-		recursiveShortestPath: 27,
+		recursiveShortestPath: 26,
 	},
 	testCase{
 		maze: `                   A               

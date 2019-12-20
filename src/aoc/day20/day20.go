@@ -30,6 +30,15 @@ type Vertex struct {
 	name string
 	side int
 }
+
+func (v Vertex) opposite() Vertex {
+	opposite := outer
+	if v.side == outer {
+		opposite = inner
+	}
+	return Vertex{v.name, opposite}
+}
+
 type Edge struct {
 	v1, v2 Vertex
 }
@@ -279,7 +288,6 @@ func (g *Graph) ShortestPath(start, end Vertex) int {
 }
 
 func (g *Graph) RecursiveShortestPath(start, end Vertex) int {
-	return -1
 	type lvertex struct {
 		v     Vertex
 		level int
@@ -289,20 +297,14 @@ func (g *Graph) RecursiveShortestPath(start, end Vertex) int {
 	queue := trails{trail{start, 0, 0}}
 
 	for len(queue) > 0 {
-		fmt.Println()
-		fmt.Println("visited", visited)
 		sort.Sort(queue)
 		current := queue[0]
 		queue = queue[1:]
-		fmt.Println(current, queue)
 		if current.end.name == "ZZ" {
-			return current.distance
+			return current.distance - 1
 		}
 		if current.level < 0 {
 			panic("level")
-		}
-		if current.distance > 400 {
-			panic("distance")
 		}
 
 		if _, ok := visited[lvertex{current.end, current.level}]; ok {
@@ -310,20 +312,23 @@ func (g *Graph) RecursiveShortestPath(start, end Vertex) int {
 		}
 		visited[lvertex{current.end, current.level}] = current.distance
 
-		for v, length := range g.dummyEdges[current.end.name] {
-			if current.level == 0 && v.side == outer && v.name == "ZZ" {
+		for v, length := range g.Edges[current.end] {
+			if current.level == 0 && v.side == outer && v.name != "AA" && v.name != "ZZ" {
 				continue
 			}
 			if current.level > 0 && (v.name == "AA" || v.name == "ZZ") {
 				continue
 			}
+
 			levelMod := 1
 			if v.side == outer {
 				levelMod = -1
 			}
-			queue = append(queue, trail{v, current.distance + length, current.level + levelMod})
+			if v.name == "ZZ" || v.name == "AA" {
+				levelMod = 0
+			}
+			queue = append(queue, trail{v.opposite(), current.distance + length, current.level + levelMod})
 		}
-		fmt.Println("queue", queue)
 	}
 
 	return visited[lvertex{end, 0}] - 1
