@@ -59,31 +59,47 @@ ground – true
 
 
 @
-#ABCD#
+#ABCDEFGHI#
 
-   ABCD
-  J123
+   2
+  1 3
+ J   L
 ####.###
-
-  ABCD
- J123
+   2
+  1 3
+ J   L
 ##...###
 
-     ABCD
- ABCD
-J123J123
-###.##.###
+   2    2
+  1 3  1 3
+ J   LJ   L
+####.##.###
 
+   2   2   2
+  1 3 1 3 1 3
+ J   x   x   L
+####.##.##..####
+
+##.##..####
+
+#####.#.##..#####
+
+#####..###...####
+   ABCDEFGH
 
 */
 func exercise2(memory string) int {
 	cpu := intcode.NewIntcode(intcode.NewMemory(memory))
-	program := `NOT C T
-OR T J
+	program := `NOT T T
+AND A T
+AND B T
+AND C T
+NOT T J
+AND D J
+AND H J
 NOT A T
 OR T J
-AND D J
-WALK
+RUN
 `
 	for _, x := range program {
 		cpu.AddInput(int(x))
