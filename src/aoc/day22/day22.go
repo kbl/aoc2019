@@ -16,12 +16,13 @@ func main() {
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	d := NewDeck(10007)
+	d.Shuffle(lines)
 	// too high 9209
-	fmt.Println(d.Position(2019))
+	fmt.Println("Exercise 1:", d.Position(2019))
 }
 
 func (d *Deck) Shuffle(instructions []string) {
-	for _, l := range lines {
+	for _, l := range instructions {
 		t := strings.Split(l, " ")
 		if t[0] == "cut" {
 			v, err := strconv.Atoi(t[1])

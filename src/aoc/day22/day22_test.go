@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -80,4 +81,58 @@ func TestPosition(t *testing.T) {
 	if got != expected {
 		t.Errorf("NewDeck(10).Position(3) = %d, want %d", got, expected)
 	}
+}
+
+func TestShuffle(t *testing.T) {
+	instructions := `deal with increment 7
+deal into new stack
+deal into new stack`
+	d := NewDeck(10)
+	d.Shuffle(strings.Split(instructions, "\n"))
+	expected := []int{0, 3, 6, 9, 2, 5, 8, 1, 4, 7}
+	got := d.Content()
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("NewDeck(10).Shuffle() = %d, want %d", got, expected)
+	}
+
+	instructions = `cut 6
+deal with increment 7
+deal into new stack`
+	d = NewDeck(10)
+	d.Shuffle(strings.Split(instructions, "\n"))
+	expected = []int{3, 0, 7, 4, 1, 8, 5, 2, 9, 6}
+	got = d.Content()
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("NewDeck(10).Shuffle() = %d, want %d", got, expected)
+	}
+
+	instructions = `deal with increment 7
+deal with increment 9
+cut -2`
+	d = NewDeck(10)
+	d.Shuffle(strings.Split(instructions, "\n"))
+	expected = []int{6, 3, 0, 7, 4, 1, 8, 5, 2, 9}
+	got = d.Content()
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("NewDeck(10).Shuffle() = %d, want %d", got, expected)
+	}
+
+	instructions = `deal into new stack
+cut -2
+deal with increment 7
+cut 8
+cut -4
+deal with increment 7
+cut 3
+deal with increment 9
+deal with increment 3
+cut -1`
+	d = NewDeck(10)
+	d.Shuffle(strings.Split(instructions, "\n"))
+	expected = []int{9, 2, 5, 8, 1, 4, 7, 0, 3, 6}
+	got = d.Content()
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("NewDeck(10).Shuffle() = %d, want %d", got, expected)
+	}
+
 }
