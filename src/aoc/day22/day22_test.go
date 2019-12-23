@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -25,6 +26,7 @@ func TestNewDeck(t *testing.T) {
 
 func TestDealInto(t *testing.T) {
 	d := NewDeck(10)
+	fmt.Println(d.cl)
 	expected := []int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 	d.Deal()
 	got := d.Content()

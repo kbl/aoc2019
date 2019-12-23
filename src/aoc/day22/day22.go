@@ -2,11 +2,43 @@ package main
 
 import (
 	"aoc"
+	"aoc/collections"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
 )
+
+const (
+	cut  = 0
+	deal = 1
+	inc  = 2
+)
+
+func parse(instructions []string) [][]int {
+	ops := [][]int{}
+	for _, l := range instructions {
+		t := strings.Split(l, " ")
+		if t[0] == "cut" {
+			v, err := strconv.Atoi(t[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+			ops = append(ops, []int{cut, v})
+		} else if t[1] == "with" {
+			v, err := strconv.Atoi(t[3])
+			if err != nil {
+				log.Fatal(err)
+			}
+			ops = append(ops, []int{inc, v})
+		} else if t[1] == "into" {
+			ops = append(ops, []int{deal, 0})
+		} else {
+			panic("unknown")
+		}
+	}
+	return ops
+}
 
 func main() {
 	inputFilePath := aoc.InputArg()
@@ -19,62 +51,22 @@ func Main(inputFilePath string) {
 	td := NewTrackingDeck(10007, 2019)
 	d.Shuffle(lines)
 	td.Track(lines)
-	// too high 9209
+
 	fmt.Println("Exercise 1:", d.Position(2019))
 	fmt.Println("Exercise 1:", td.Index)
-	size := 101741582076661
-	noShufles := 119315717514047
-
-	td.Track(lines)
-	fmt.Println(size)
-	fmt.Println(noShufles)
-	fmt.Println("Exercise 2:", td.Index)
-
-	index := 2020
-	i := 0
-
-	for {
-		td = NewTrackingDeck(size, index)
-		td.Track(lines)
-		index = td.Index
-		if i%10000 == 0 {
-			fmt.Printf("%6d: %d\n", i, td.Index)
-		}
-		if index == 2020 {
-			fmt.Printf("%6d: %d\n", i, td.Index)
-			break
-		}
-		i++
-	}
 }
 
 func (d *Deck) Shuffle(instructions []string) {
-	for _, l := range instructions {
-		t := strings.Split(l, " ")
-		if t[0] == "cut" {
-			v, err := strconv.Atoi(t[1])
-			if err != nil {
-				log.Fatal(err)
-			}
-			d.Cut(v)
-		} else if t[1] == "with" {
-			v, err := strconv.Atoi(t[3])
-			if err != nil {
-				log.Fatal(err)
-			}
-			d.Increment(v)
-		} else if t[1] == "into" {
+	for _, op := range parse(instructions) {
+		switch op[0] {
+		case cut:
+			d.Cut(op[1])
+		case inc:
+			d.Increment(op[1])
+		case deal:
 			d.Deal()
-		} else {
-			fmt.Println(l)
-			panic("unknown")
 		}
 	}
-}
-
-type node struct {
-	v          int
-	prev, next *node
 }
 
 const (
@@ -83,54 +75,51 @@ const (
 )
 
 type Deck struct {
-	size, direction int
-	pointer         *node
+	size      int
+	direction collections.Direction
+	cl        *collections.CircularList
 }
 
 func NewDeck(size int) *Deck {
-	first := &node{}
-	prev := first
-	for v := 1; v < size; v++ {
-		n := &node{v: v, prev: prev, next: nil}
-		prev.next = n
-		prev = n
+	cl := collections.NewCircularList()
+	for v := 0; v < size; v++ {
+		cl.Add(v)
 	}
-	prev.next = first
-	first.prev = prev
-	return &Deck{size, forward, first}
+	cl.RShift()
+	return &Deck{size, forward, cl}
 }
 
 func (d *Deck) String() string {
 	repr := []string{}
-	for _, v := range d.Content() {
+	for _, v := range d.cl.ToSlice(d.direction) {
 		repr = append(repr, strconv.Itoa(v))
 	}
 	return strings.Join(repr, ", ")
 }
 
 func (d *Deck) Deal() {
-	if d.direction == forward {
-		d.direction = backward
-	} else {
-		d.direction = forward
-	}
+	fmt.Println(1, d)
+	fmt.Println(d.cl)
+	d.direction = d.direction.Opposite()
+	fmt.Println(2, d)
+	fmt.Println(d.cl)
 	d.Cut(1)
+	fmt.Println(3, d)
+	fmt.Println(d.cl)
+	fmt.Println()
 }
 
 func (d *Deck) Cut(n int) {
 	direction := d.direction
 	if n < 0 {
 		n = -n
-		direction = forward
-		if d.direction == forward {
-			direction = backward
-		}
+		direction = d.direction.Opposite()
 	}
 	for i := 0; i < n; i++ {
-		if direction == forward {
-			d.pointer = d.pointer.next
+		if direction == collections.Forward {
+			d.cl.RShift()
 		} else {
-			d.pointer = d.pointer.prev
+			d.cl.LShift()
 		}
 	}
 }
@@ -139,54 +128,35 @@ func (d *Deck) Increment(n int) {
 	c := make([]int, d.size)
 
 	index := 0
-	p := d.pointer
 	for i := 0; i < d.size; i++ {
-		c[index] = p.v
+		if d.direction == collections.Forward {
+			c[index] = d.cl.RPop()
+		} else {
+			c[index] = d.cl.LPop()
+		}
 		index += n
 		index %= d.size
-		if d.direction == forward {
-			p = p.next
-		} else {
-			p = p.prev
-		}
 	}
 
-	d.direction = forward
-	node := d.pointer
+	d.direction = collections.Forward
+	d.cl = collections.NewCircularList()
 	for _, v := range c {
-		node.v = v
-		node = node.next
+		d.cl.Add(v)
 	}
-}
-
-func (d *Deck) Position(n int) int {
-	node := d.pointer
-	for i := 0; i < d.size; i++ {
-		if n == node.v {
-			return i
-		}
-		if d.direction == forward {
-			node = node.next
-		} else {
-			node = node.prev
-		}
-	}
-
-	return -1
+	d.cl.RShift()
 }
 
 func (d *Deck) Content() []int {
-	content := []int{}
-	p := d.pointer
-	for i := 0; i < d.size; i++ {
-		content = append(content, p.v)
-		if d.direction == forward {
-			p = p.next
-		} else {
-			p = p.prev
+	return d.cl.ToSlice(d.direction)
+}
+
+func (d *Deck) Position(n int) int {
+	for i, v := range d.Content() {
+		if n == v {
+			return i
 		}
 	}
-	return content
+	return -1
 }
 
 type TrackingDeck struct {
@@ -198,25 +168,14 @@ func NewTrackingDeck(size, index int) *TrackingDeck {
 }
 
 func (d *TrackingDeck) Track(instructions []string) {
-	for _, l := range instructions {
-		t := strings.Split(l, " ")
-		if t[0] == "cut" {
-			v, err := strconv.Atoi(t[1])
-			if err != nil {
-				log.Fatal(err)
-			}
-			d.Cut(v)
-		} else if t[1] == "with" {
-			v, err := strconv.Atoi(t[3])
-			if err != nil {
-				log.Fatal(err)
-			}
-			d.Increment(v)
-		} else if t[1] == "into" {
+	for _, op := range parse(instructions) {
+		switch op[0] {
+		case cut:
+			d.Cut(op[1])
+		case inc:
+			d.Increment(op[1])
+		case deal:
 			d.Deal()
-		} else {
-			fmt.Println(l)
-			panic("unknown")
 		}
 	}
 }
@@ -238,13 +197,59 @@ func (d *TrackingDeck) Increment(n int) {
 //	inc(n) = i * n
 
 type Function struct {
-	int size
-	int mSize
-	int index
-	int mIndex
-	int constant
+	sizeMultiplier  int
+	indexMultiplier int
+	constant        int
 }
 
-func NewFunction(size, index int) *Function {
-	return &Function{size, index}
+var Deal = func() Function {
+	return Function{
+		sizeMultiplier:  1,
+		indexMultiplier: -1,
+		constant:        -1,
+	}
+}
+
+var Cut = func(n int) Function {
+	return Function{
+		sizeMultiplier:  1,
+		indexMultiplier: 1,
+		constant:        -n,
+	}
+}
+
+var Inc = func(n int) Function {
+	return Function{
+		sizeMultiplier:  0,
+		indexMultiplier: n,
+		constant:        0,
+	}
+}
+
+func (f Function) String() string {
+	return fmt.Sprintf("f(i, s) = i*%d + s*%d + %d", f.indexMultiplier, f.sizeMultiplier, f.constant)
+}
+
+func (f Function) Apply(of Function) Function {
+	return Function{
+		indexMultiplier: f.indexMultiplier + of.indexMultiplier,
+		sizeMultiplier:  f.sizeMultiplier + of.sizeMultiplier,
+		constant:        f.constant + of.constant,
+	}
+}
+
+func (f Function) Normalize(n int) Function {
+	if f.indexMultiplier < 0 || f.sizeMultiplier < 0 || f.constant < 0 {
+		panic("Can't normalize negative values!")
+	}
+	return Function{
+		indexMultiplier: f.indexMultiplier % n,
+		sizeMultiplier:  f.sizeMultiplier % n,
+		constant:        f.constant % n,
+	}
+}
+
+func (f Function) Value(i, s int) int {
+	f = f.Normalize(s)
+	return ((i*f.indexMultiplier)%s + (s*f.sizeMultiplier)%s + f.constant) % s
 }
