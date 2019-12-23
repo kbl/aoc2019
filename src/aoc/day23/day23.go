@@ -4,7 +4,6 @@ import (
 	"aoc"
 	"aoc/intcode"
 	"fmt"
-	"time"
 )
 
 func main() {
@@ -47,7 +46,7 @@ type nat struct {
 	inputs   map[int]*networkInput
 }
 
-func (n *nat) monitor() {
+func (n *nat) monitor(finished chan bool) {
 	first := true
 	for {
 		idle := true
@@ -56,21 +55,16 @@ func (n *nat) monitor() {
 		}
 
 		if idle && n.ready {
-			time.Sleep(1 * time.Second)
 			x, y := n.x, n.y
 			fmt.Printf("NAT >    0 (%6d %6d)\n", x, y)
 			n.inputs[0].AddPacket(x, y)
 			n.ready = false
+			if !first && n.previous == y {
+				fmt.Printf("NAT > doubled %d\n", n.previous)
+				finished <- true
+			}
 			first = false
 			n.previous = y
-		}
-
-		if idle && !first && n.x+n.y != 0 {
-			// if !first && n.y == n.previous {
-			// 	fmt.Println(n.y)
-			// 	panic("double!")
-			// }
-			first = false
 		}
 	}
 }
@@ -79,22 +73,18 @@ func run(i int, cpu *intcode.Intcode, inputs map[int]*networkInput, finished cha
 	for {
 		destination, m := cpu.Output()
 		if m == intcode.HaltMode {
-			fmt.Printf("%3d: STOP a %d\n", i, destination)
 			break
 		}
 		x, m := cpu.Output()
 		if m == intcode.HaltMode {
-			fmt.Printf("%3d: STOP b %d\n", i, destination)
 			break
 		}
 		y, m := cpu.Output()
 		if m == intcode.HaltMode {
-			fmt.Printf("%3d: STOP c %d\n", i, destination)
 			break
 		}
 		if destination == 255 {
 			fmt.Printf("%3d > NAT (%6d %6d)\n", i, x, y)
-			fmt.Println(n)
 			n.ready = false
 			n.x, n.y = x, y
 			n.ready = true
@@ -122,7 +112,7 @@ func Main(inputFilePath string) {
 	for i, cpu := range cpus {
 		go run(i, cpu, inputs, finished, n)
 	}
-	go n.monitor()
+	go n.monitor(finished)
 
 	<-finished
 }
