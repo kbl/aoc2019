@@ -41,6 +41,7 @@ func (i *networkInput) Get() int {
 }
 
 type nat struct {
+	ready    bool
 	x, y     int
 	previous int
 	inputs   map[int]*networkInput
@@ -49,21 +50,27 @@ type nat struct {
 func (n *nat) monitor() {
 	first := true
 	for {
-		time.Sleep(10000)
 		idle := true
 		for _, input := range n.inputs {
 			idle = idle && input.isIdle
 		}
 
-		if idle && !first && n.x+n.y != 0 {
-			fmt.Printf("NAT: %d %d\n", n.x, n.y)
-			n.inputs[0].AddPacket(n.x, n.y)
-			if !first && n.y == n.previous {
-				fmt.Println(n.y)
-				panic("double!")
-			}
+		if idle && n.ready {
+			time.Sleep(1 * time.Second)
+			x, y := n.x, n.y
+			fmt.Printf("NAT >    0 (%6d %6d)\n", x, y)
+			n.inputs[0].AddPacket(x, y)
+			n.ready = false
 			first = false
-			n.previous = n.y
+			n.previous = y
+		}
+
+		if idle && !first && n.x+n.y != 0 {
+			// if !first && n.y == n.previous {
+			// 	fmt.Println(n.y)
+			// 	panic("double!")
+			// }
+			first = false
 		}
 	}
 }
@@ -88,9 +95,11 @@ func run(i int, cpu *intcode.Intcode, inputs map[int]*networkInput, finished cha
 		if destination == 255 {
 			fmt.Printf("%3d > NAT (%6d %6d)\n", i, x, y)
 			fmt.Println(n)
+			n.ready = false
 			n.x, n.y = x, y
+			n.ready = true
 		} else {
-			fmt.Printf("%2d: > %3d (%6d %6d)\n", i, destination, x, y)
+			fmt.Printf("%3d > %3d (%6d %6d)\n", i, destination, x, y)
 			inputs[destination].AddPacket(x, y)
 		}
 	}
