@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	bug   = '#'
-	empty = '.'
+	bug   = true
+	empty = false
 )
 
 func main() {
@@ -23,7 +23,7 @@ func Main(inputFilePath string) {
 	fmt.Println(first(grid))
 }
 
-func first(grid [][]rune) int {
+func first(grid [][]bool) int {
 	seen := map[int]bool{}
 	r := rating(grid)
 	for !seen[r] {
@@ -39,18 +39,26 @@ func first(grid [][]rune) int {
 	return r
 }
 
-func str(grid [][]rune) string {
+func str(grid [][]bool) string {
 	repr := []string{}
 	for _, row := range grid {
-		repr = append(repr, string(row))
+		r := []rune{}
+		for _, tile := range row {
+			tileS := '.'
+			if tile == bug {
+				tileS = '#'
+			}
+			r = append(r, tileS)
+		}
+		repr = append(repr, string(r))
 	}
 	return strings.Join(repr, "\n")
 }
 
-func evolve(grid [][]rune) [][]rune {
-	next := [][]rune{}
+func evolve(grid [][]bool) [][]bool {
+	next := [][]bool{}
 	for y, row := range grid {
-		nextRow := []rune{}
+		nextRow := []bool{}
 		for x, tile := range row {
 			hm := 0
 			if x-1 >= 0 && grid[y][x-1] == bug {
@@ -79,7 +87,67 @@ func evolve(grid [][]rune) [][]rune {
 	return next
 }
 
-func rating(grid [][]rune) int {
+// 00 10 20 30 40
+// 01 11 21 31 41
+// 02 12 ?? 32 42
+// 03 13 23 33 43
+// 04 14 24 34 44
+//
+// y in [0, 4]
+// look += [level + 1]
+// 00
+// 10
+// 20
+// 30
+// 40
+// 01
+// 02
+// 03
+// 04
+
+func evolveRecursive(grids map[int][][]bool) map[int][][]bool {
+	level := 0
+	nextGrids := map[int][][]bool{}
+	for grid, ok := grids[level]; ok; {
+		nextGrid := [][]bool{}
+		for y, row := range grid {
+			nextRow := []bool{}
+			for x, tile := range row {
+				if x == 2 && y == 2 {
+					continue
+				}
+
+				hm := 0
+				if x-1 >= 0 && grid[y][x-1] == bug {
+					hm++
+				}
+				if x+1 < 5 && grid[y][x+1] == bug {
+					hm++
+				}
+				if y-1 >= 0 && grid[y-1][x] == bug {
+					hm++
+				}
+				if y+1 < 5 && grid[y+1][x] == bug {
+					hm++
+				}
+				nextTile := empty
+				if tile == bug && hm == 1 {
+					nextTile = bug
+				}
+				if tile == empty && (hm == 1 || hm == 2) {
+					nextTile = bug
+				}
+				nextRow = append(nextRow, nextTile)
+			}
+			nextGrid = append(nextGrid, nextRow)
+		}
+		nextGrids[level] = nextGrid
+		level--
+	}
+	return nextGrids
+}
+
+func rating(grid [][]bool) int {
 	rating := 0
 	for y, row := range grid {
 		for x, tile := range row {
@@ -91,10 +159,18 @@ func rating(grid [][]rune) int {
 	return rating
 }
 
-func parse(lines []string) [][]rune {
-	grid := [][]rune{}
+func parse(lines []string) [][]bool {
+	grid := [][]bool{}
 	for _, l := range lines {
-		grid = append(grid, []rune(l))
+		row := []bool{}
+		for _, r := range l {
+			tileType := bug
+			if r == '.' {
+				tileType = empty
+			}
+			row = append(row, tileType)
+		}
+		grid = append(grid, row)
 	}
 	return grid
 }
