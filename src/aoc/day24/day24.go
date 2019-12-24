@@ -3,12 +3,14 @@ package main
 import (
 	"aoc"
 	"fmt"
+	"math/bits"
 	"strings"
 )
 
 const (
-	bug   = true
-	empty = false
+	bug    = '#'
+	empty  = '.'
+	maxlen = 5
 )
 
 func main() {
@@ -25,8 +27,6 @@ func Main(inputFilePath string) {
 func first(grid int) int {
 	seen := map[int]bool{}
 	for !seen[grid] {
-		fmt.Println(str(grid))
-		fmt.Println()
 		seen[grid] = true
 		grid = evolve(grid)
 	}
@@ -34,19 +34,19 @@ func first(grid int) int {
 }
 
 func bit(x, y int) int {
-	return 1 << (y*5 + x)
+	return 1 << (y*maxlen + x)
 }
 
 func str(grid int) string {
 	repr := []string{}
-	for y := 0; y < 5; y++ {
+	for y := 0; y < maxlen; y++ {
 		row := []rune{}
-		for x := 0; x < 5; x++ {
+		for x := 0; x < maxlen; x++ {
+			tile := empty
 			if grid&bit(x, y) > 0 {
-				row = append(row, '#')
-			} else {
-				row = append(row, '.')
+				tile = bug
 			}
+			row = append(row, tile)
 		}
 		repr = append(repr, string(row))
 	}
@@ -57,23 +57,28 @@ func isBug(grid int, x, y int) bool {
 	return grid&bit(x, y) > 0
 }
 
+func adjacent(x, y int) int {
+	adj := 0
+	if x > 0 {
+		adj |= bit(x-1, y)
+	}
+	if y > 0 {
+		adj |= bit(x, y-1)
+	}
+	if x < maxlen-1 {
+		adj |= bit(x+1, y)
+	}
+	if y < maxlen-1 {
+		adj |= bit(x, y+1)
+	}
+	return adj
+}
+
 func evolve(grid int) int {
 	next := 0
-	for y := 0; y < 5; y++ {
-		for x := 0; x < 5; x++ {
-			hm := 0
-			if x-1 >= 0 && isBug(grid, x-1, y) {
-				hm++
-			}
-			if x+1 < 5 && isBug(grid, x+1, y) {
-				hm++
-			}
-			if y-1 >= 0 && isBug(grid, x, y-1) {
-				hm++
-			}
-			if y+1 < 5 && isBug(grid, x, y+1) {
-				hm++
-			}
+	for y := 0; y < maxlen; y++ {
+		for x := 0; x < maxlen; x++ {
+			hm := bits.OnesCount(uint(grid & adjacent(x, y)))
 			if isBug(grid, x, y) && hm == 1 {
 				next |= bit(x, y)
 			}
@@ -113,53 +118,11 @@ func evolve(grid int) int {
 // 03
 // 04
 
-func evolveRecursive(grids map[int][][]bool) map[int][][]bool {
-	level := 0
-	nextGrids := map[int][][]bool{}
-	for grid, ok := grids[level]; ok; {
-		nextGrid := [][]bool{}
-		for y, row := range grid {
-			nextRow := []bool{}
-			for x, tile := range row {
-				if x == 2 && y == 2 {
-					continue
-				}
-
-				hm := 0
-				if x-1 >= 0 && grid[y][x-1] == bug {
-					hm++
-				}
-				if x+1 < 5 && grid[y][x+1] == bug {
-					hm++
-				}
-				if y-1 >= 0 && grid[y-1][x] == bug {
-					hm++
-				}
-				if y+1 < 5 && grid[y+1][x] == bug {
-					hm++
-				}
-				nextTile := empty
-				if tile == bug && hm == 1 {
-					nextTile = bug
-				}
-				if tile == empty && (hm == 1 || hm == 2) {
-					nextTile = bug
-				}
-				nextRow = append(nextRow, nextTile)
-			}
-			nextGrid = append(nextGrid, nextRow)
-		}
-		nextGrids[level] = nextGrid
-		level--
-	}
-	return nextGrids
-}
-
 func parse(lines []string) int {
 	var grid int = 0
 	for y, l := range lines {
 		for x, r := range l {
-			if r == '#' {
+			if r == bug {
 				grid |= bit(x, y)
 			}
 		}
