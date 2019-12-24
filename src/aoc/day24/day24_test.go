@@ -1,25 +1,36 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
 
-type testCase struct {
-	input    int
-	expected int
-}
-
-var testCases = []testCase{}
-
-func TestSomething(t *testing.T) {
+func TestExercise1(t *testing.T) {
 	input := `....#
 #..#.
 #..##
 ..#..
 #....`
 	grid := parse(strings.Split(input, "\n"))
-	fmt.Println(str(grid))
-	fmt.Println(first(grid))
+	got := exercise1(grid)
+	expected := 2129920
+
+	if got != expected {
+		t.Errorf("exercise1(grid) = %d, want %d", got, expected)
+	}
+}
+
+func TestExercise2(t *testing.T) {
+	input := `....#
+#..#.
+#..##
+..#..
+#....`
+	grid := parse(strings.Split(input, "\n"))
+	got := exercise2(10, grid)
+	expected := 99
+
+	if got != expected {
+		t.Errorf("exercise2(10, grid) = %d, want %d", got, expected)
+	}
 }
