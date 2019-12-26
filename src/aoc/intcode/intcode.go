@@ -107,6 +107,13 @@ func (i *Intcode) AddInput(value int) {
 	i.in.Add(value)
 }
 
+func (i *Intcode) AddAsciiInput(command string) {
+	for _, letter := range command {
+		i.AddInput(int(letter))
+	}
+	i.AddInput(int('\n'))
+}
+
 func (i *Intcode) Execute() int {
 	for {
 		v, m := i.Output()
