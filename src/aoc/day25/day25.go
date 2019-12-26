@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -33,7 +34,7 @@ func (c cord) move(direction string) cord {
 	}
 }
 
-var avoid_items = []string{"escape pod", "molten lava", "giant electromagnet", "infinite loop", "photons"}
+var avoid_items = map[string]bool{"escape pod": true, "molten lava": true, "giant electromagnet": true, "infinite loop": true, "photons": true}
 
 type room struct {
 	name, description string
@@ -62,7 +63,7 @@ func NewRoom(description string) *room {
 	if strings.HasPrefix(lines[0], "Items") {
 		i := 1
 		for strings.HasPrefix(lines[i], "- ") {
-			r.items = append(r.items, strings.Split(lines[i], " ")[1])
+			r.items = append(r.items, strings.Split(lines[i], "- ")[1])
 			i++
 		}
 		lines = lines[i+1:]
@@ -71,59 +72,70 @@ func NewRoom(description string) *room {
 	return &r
 }
 
-type maze struct {
+type gameSolver struct {
+	mazeTraversed          bool
 	rooms                  map[cord]*room
 	minx, maxx, miny, maxy int
 	position               cord
-	toVisit                map[cord]bool
+	inventory              map[string]bool
+	toVisitRooms           []cord
 }
 
-func NewMaze() *maze {
-	return &maze{
-		rooms:   make(map[cord]*room),
-		toVisit: make(map[cord]bool),
+func newGameSolver() *gameSolver {
+	return &gameSolver{
+		rooms:     map[cord]*room{},
+		inventory: map[string]bool{},
 	}
 }
 
-func (m *maze) visited(c cord) bool {
-	_, ok := m.rooms[c]
+func (gs *gameSolver) visited(c cord) bool {
+	_, ok := gs.rooms[c]
 	return ok
 }
 
-func (m *maze) move(direction string) {
-	for _, possibleDirection := range m.rooms[m.position].doors {
+func (gs *gameSolver) move(direction string) {
+	for _, possibleDirection := range gs.rooms[gs.position].doors {
 		if direction == possibleDirection {
-			m.position = m.position.move(direction)
+			gs.position = gs.position.move(direction)
 			break
 		}
 	}
 }
 
-func (m *maze) addRoom(c cord, r *room) {
-	if c.x > m.maxx {
-		m.maxx = c.x
+func (gs *gameSolver) addRoom(c cord, r *room) {
+	if c.x > gs.maxx {
+		gs.maxx = c.x
 	}
-	if c.y > m.maxy {
-		m.maxy = c.y
+	if c.y > gs.maxy {
+		gs.maxy = c.y
 	}
-	if c.x < m.minx {
-		m.minx = c.x
+	if c.x < gs.minx {
+		gs.minx = c.x
 	}
-	if c.y < m.miny {
-		m.miny = c.y
+	if c.y < gs.miny {
+		gs.miny = c.y
 	}
-	m.rooms[c] = r
-	m.toVisit[c] = false
+	gs.rooms[c] = r
+
+	newToVisitRooms := []cord{}
+	for _, tvr := range gs.toVisitRooms {
+		if c == tvr {
+			continue
+		}
+		newToVisitRooms = append(newToVisitRooms, tvr)
+	}
+	gs.toVisitRooms = newToVisitRooms
+
 	for _, direction := range r.doors {
-		newPosition := m.position.move(direction)
-		if _, visited := m.rooms[newPosition]; !visited {
-			m.toVisit[newPosition] = true
+		newPosition := gs.position.move(direction)
+		if _, visited := gs.rooms[newPosition]; !visited {
+			gs.toVisitRooms = append(gs.toVisitRooms, newPosition)
 		}
 	}
 }
 
-func (m *maze) findPath(start, end cord) []string {
-	if !m.visited(start) {
+func (gs *gameSolver) findPath(start, end cord) []string {
+	if !gs.visited(start) {
 		panic("Path doesn't exist!")
 	}
 	if start == end {
@@ -139,12 +151,12 @@ func (m *maze) findPath(start, end cord) []string {
 		current := toVisit[0]
 		toVisit = toVisit[1:]
 
-		for move := range moves {
+		for _, move := range gs.rooms[current].doors {
 			next := current.move(move)
 			if next == end {
 				return append(directions[current], move)
 			}
-			if _, known := m.rooms[next]; !known {
+			if _, known := gs.rooms[next]; !known {
 				continue
 			}
 			if _, alreadyTracked := paths[next]; alreadyTracked {
@@ -164,74 +176,207 @@ func (m *maze) findPath(start, end cord) []string {
 	return directions[end]
 }
 
-func (m *maze) String() string {
+func (gs *gameSolver) String() string {
 	lines := []string{}
-	for y := m.maxy + 1; y >= m.miny-1; y-- {
+	for y := gs.maxy + 1; y >= gs.miny-1; y-- {
 		line := []rune{}
-		for x := m.minx - 1; x <= m.maxx+1; x++ {
-			if _, ok := m.rooms[cord{x, y}]; ok {
-				if x == m.position.x && y == m.position.y {
-					line = append(line, 'X')
+		for x := gs.minx - 1; x <= gs.maxx+1; x++ {
+			character := ' '
+			c := cord{x, y}
+			if _, ok := gs.rooms[c]; ok {
+				if x == 0 && y == 0 {
+					character = '®'
+				} else if x == gs.position.x && y == gs.position.y {
+					character = 'X'
 				} else {
-					line = append(line, '.')
+					character = '.'
 				}
-			} else if m.toVisit[cord{x, y}] {
-				line = append(line, '?')
-			} else {
-				line = append(line, ' ')
 			}
+			for _, tvr := range gs.toVisitRooms {
+				if tvr == c {
+					character = '?'
+				}
+			}
+			line = append(line, character)
 		}
 		lines = append(lines, string(line))
 	}
 	return strings.Join(lines, "\n")
 }
 
+func (gs *gameSolver) takeItems(cpu *intcode.Intcode) {
+	for _, i := range gs.rooms[gs.position].items {
+		if avoid_items[i] {
+			continue
+		}
+		fmt.Println(">> taking", i)
+		gs.inventory[i] = true
+		cpu.AddAsciiInput(fmt.Sprintf("take %s", i))
+	}
+}
+
+func (gs *gameSolver) pickNextRoom(cpu *intcode.Intcode) {
+	if len(gs.toVisitRooms) == 0 {
+		gs.mazeTraversed = true
+		return
+	}
+	if gs.position == gs.toVisitRooms[0] {
+		gs.toVisitRooms = gs.toVisitRooms[1:]
+	}
+
+	path := gs.findPath(gs.position, gs.toVisitRooms[0])
+	fmt.Println(">> going", path[0])
+	fmt.Println(gs.position)
+	cpu.AddAsciiInput(path[0])
+	gs.move(path[0])
+}
+
 type outputType int
 
 const (
-	outputRoom = 0
-	outputTake = 1
+	outputRoom        = 0
+	outputTakeItem    = 1
+	outputMissingItem = 2
+	outputDropItem    = 3
+	outputInventory   = 4
 )
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	cpu := intcode.NewIntcode(intcode.NewMemory(lines[0]))
-
-	grid := NewMaze()
+	gs := newGameSolver()
 
 	output := []rune{}
-	reader := bufio.NewReader(os.Stdin)
-	for {
+	for !gs.mazeTraversed {
 		value, mode := cpu.Output()
 		if mode == intcode.HaltMode {
+			fmt.Println(value)
 			panic("HALT MODE")
 		}
 		output = append(output, rune(value))
 		if strings.HasSuffix(string(output), "Command?\n") {
-			fmt.Println(string(output))
+			// fmt.Println(string(output))
 			switch decide(string(output)) {
 			case outputRoom:
 				room := NewRoom(string(output))
-				grid.addRoom(grid.position, room)
+				gs.addRoom(gs.position, room)
+				gs.takeItems(cpu)
+				gs.pickNextRoom(cpu)
+			case outputTakeItem:
+				break
+			default:
+				panic("unknown output")
 			}
-			fmt.Println(grid)
-			command, _ := reader.ReadString('\n')
-			command = strings.Trim(command, "\n")
-			if _, ok := moves[command]; ok {
-				grid.move(command)
+			fmt.Println(gs)
+			output = []rune{}
+		}
+	}
+
+	output = []rune{}
+
+	items := []string{}
+	for i := range gs.inventory {
+		items = append(items, i)
+	}
+	sort.Strings(items)
+	combs := combinations(items)
+	for _, c := range combs {
+		fmt.Println(c)
+	}
+
+	for _, i := range items {
+		cpu.AddAsciiInput(fmt.Sprintf("drop %s", i))
+	}
+
+	dropped := 0
+	taken := 0
+	for combinationId := 0; combinationId < len(combs); {
+		value, mode := cpu.Output()
+		if mode == intcode.HaltMode {
+			fmt.Println(value)
+			fmt.Println(string(output))
+			return
+		}
+		output = append(output, rune(value))
+		if strings.HasSuffix(string(output), "Command?\n") {
+			// fmt.Println(string(output))
+			switch decide(string(output)) {
+			case outputMissingItem:
+				dropped++
+			case outputDropItem:
+				dropped++
+			case outputTakeItem:
+				taken++
+			case outputRoom:
+				fmt.Println(string(output))
+				for _, i := range items {
+					cpu.AddAsciiInput(fmt.Sprintf("drop %s", i))
+				}
+				combinationId++
+			case outputInventory:
+				fmt.Println(string(output))
+			default:
+				fmt.Println(string(output))
+				panic("Unknown output!")
 			}
-			cpu.AddAsciiInput(command)
+
+			if dropped == len(items) {
+				fmt.Println(combinationId)
+				for _, i := range combs[combinationId] {
+					cpu.AddAsciiInput(fmt.Sprintf("take %s", i))
+				}
+				dropped = 0
+			}
+
+			if taken == len(combs[combinationId]) {
+				cpu.AddAsciiInput("inv")
+				cpu.AddAsciiInput("west")
+				taken = 0
+			}
 			output = []rune{}
 		}
 	}
 }
 
+func combinations(items []string) [][]string {
+	result := [][]string{}
+	for i := 1; i < 1<<len(items); i++ {
+		combination := []string{}
+		for j := 0; j < len(items); j++ {
+			if (1 << j & i) > 0 {
+				combination = append(combination, items[j])
+			}
+		}
+		result = append(result, combination)
+	}
+	return result
+}
+
+func (gs *gameSolver) manual(cpu *intcode.Intcode) {
+	reader := bufio.NewReader(os.Stdin)
+	command, _ := reader.ReadString('\n')
+	command = strings.Trim(command, "\n")
+	if _, ok := moves[command]; ok {
+		gs.move(command)
+	}
+	cpu.AddAsciiInput(command)
+}
+
 func decide(output string) outputType {
 	if strings.Contains(output, "You take ") {
-		return outputTake
+		return outputTakeItem
 	}
 	if strings.Contains(output, "== ") {
 		return outputRoom
+	}
+	if strings.Contains(output, "You don't have that item.") {
+		return outputMissingItem
+	}
+	if strings.Contains(output, "You drop the") {
+		return outputDropItem
+	}
+	if strings.Contains(output, "Items in your inventory") {
+		return outputInventory
 	}
 	return -1
 }
