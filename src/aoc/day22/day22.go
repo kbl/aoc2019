@@ -77,15 +77,14 @@ const (
 type Deck struct {
 	size      int
 	direction collections.Direction
-	cl        *collections.CircularList
+	cl        *collections.Deque
 }
 
 func NewDeck(size int) *Deck {
-	cl := collections.NewCircularList()
+	cl := collections.NewDeque()
 	for v := 0; v < size; v++ {
-		cl.Add(v)
+		cl.Append(v)
 	}
-	cl.RShift()
 	return &Deck{size, forward, cl}
 }
 
@@ -98,30 +97,14 @@ func (d *Deck) String() string {
 }
 
 func (d *Deck) Deal() {
-	fmt.Println(1, d)
-	fmt.Println(d.cl)
 	d.direction = d.direction.Opposite()
-	fmt.Println(2, d)
-	fmt.Println(d.cl)
-	d.Cut(1)
-	fmt.Println(3, d)
-	fmt.Println(d.cl)
-	fmt.Println()
 }
 
 func (d *Deck) Cut(n int) {
-	direction := d.direction
-	if n < 0 {
+	if d.direction == collections.Forward {
 		n = -n
-		direction = d.direction.Opposite()
 	}
-	for i := 0; i < n; i++ {
-		if direction == collections.Forward {
-			d.cl.RShift()
-		} else {
-			d.cl.LShift()
-		}
-	}
+	d.cl.Rotate(n)
 }
 
 func (d *Deck) Increment(n int) {
@@ -130,20 +113,19 @@ func (d *Deck) Increment(n int) {
 	index := 0
 	for i := 0; i < d.size; i++ {
 		if d.direction == collections.Forward {
-			c[index] = d.cl.RPop()
+			c[index], _ = d.cl.PopLeft()
 		} else {
-			c[index] = d.cl.LPop()
+			c[index], _ = d.cl.Pop()
 		}
 		index += n
 		index %= d.size
 	}
 
 	d.direction = collections.Forward
-	d.cl = collections.NewCircularList()
+	d.cl = collections.NewDeque()
 	for _, v := range c {
-		d.cl.Add(v)
+		d.cl.Append(v)
 	}
-	d.cl.RShift()
 }
 
 func (d *Deck) Content() []int {
