@@ -21,9 +21,7 @@ func main() {
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	g := parse(lines)
-	fmt.Println(g)
 	fmt.Println("Exercise 1:", exercise1(g))
-	fmt.Println(g)
 	fmt.Println("Exercise 2:", exercise2(200, g))
 }
 
@@ -38,7 +36,6 @@ func exercise1(g grid) int {
 
 func str(grids map[int]grid) {
 	minLevel, maxLevel := 0, 0
-
 	for l, _ := range grids {
 		if l > maxLevel {
 			maxLevel = l
@@ -47,7 +44,6 @@ func str(grids map[int]grid) {
 			minLevel = l
 		}
 	}
-	fmt.Println(minLevel, maxLevel)
 
 	for l := minLevel; l <= maxLevel; l++ {
 		fmt.Println("Level", l)
@@ -62,9 +58,6 @@ func exercise2(steps int, g grid) int {
 	for s := 1; s <= steps; s++ {
 		grids = evolveRecursive(grids)
 	}
-	// 674 too low
-	str(grids)
-
 	hm := 0
 	for _, g := range grids {
 		hm += bits.OnesCount(uint(g))
@@ -187,9 +180,18 @@ func (g grid) evolve() grid {
 
 func evolveRecursive(grids map[int]grid) map[int]grid {
 	next := map[int]grid{}
-	level := 0
 
-	for {
+	minLevel, maxLevel := 0, 0
+	for l, _ := range grids {
+		if l > maxLevel {
+			maxLevel = l
+		}
+		if l < minLevel {
+			minLevel = l
+		}
+	}
+
+	for level := minLevel - 1; level <= maxLevel+1; level++ {
 		nextGrid := 0
 
 		for y := 0; y < maxlen; y++ {
@@ -209,43 +211,7 @@ func evolveRecursive(grids map[int]grid) map[int]grid {
 			}
 		}
 
-		_, isDeeper := grids[level-1]
-		if nextGrid == 0 && !isDeeper {
-			break
-		}
-
 		next[level] = grid(nextGrid)
-		level--
-	}
-
-	level = 1
-	for {
-		nextGrid := 0
-
-		for y := 0; y < maxlen; y++ {
-			for x := 0; x < maxlen; x++ {
-				if x == 2 && y == 2 {
-					continue
-				}
-				hm := bits.OnesCount(uint(int(grids[level]) & adjacent(x, y)))
-				hm += bits.OnesCount(uint(int(grids[level-1]) & adjacentLevel(-1, x, y)))
-				hm += bits.OnesCount(uint(int(grids[level+1]) & adjacentLevel(1, x, y)))
-				if grids[level].isBug(x, y) && hm == 1 {
-					nextGrid |= bit(x, y)
-				}
-				if !grids[level].isBug(x, y) && (hm == 1 || hm == 2) {
-					nextGrid |= bit(x, y)
-				}
-			}
-		}
-
-		_, isDeeper := grids[level+1]
-		if nextGrid == 0 && !isDeeper {
-			break
-		}
-
-		next[level] = grid(nextGrid)
-		level++
 	}
 
 	return next
