@@ -20,45 +20,45 @@ func main() {
 
 func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
-	grid := parse(lines)
-	fmt.Println(str(grid))
-	fmt.Println("Exercise 1:", exercise1(grid))
-	fmt.Println(str(grid))
-	fmt.Println("Exercise 2:", exercise2(10, grid))
+	g := parse(lines)
+	fmt.Println(g)
+	fmt.Println("Exercise 1:", exercise1(g))
+	fmt.Println(g)
+	fmt.Println("Exercise 2:", exercise2(200, g))
 }
 
-func exercise1(grid int) int {
-	seen := map[int]bool{}
-	for !seen[grid] {
-		seen[grid] = true
-		grid = evolve(grid)
+func exercise1(g grid) int {
+	seen := map[grid]bool{}
+	for !seen[g] {
+		seen[g] = true
+		g = g.evolve()
 	}
-	return int(grid)
+	return int(g)
 }
 
-func exercise2(steps, grid int) int {
-	grids := map[int]int{0: grid}
+func exercise2(steps int, g grid) int {
+	grids := map[int]grid{0: g}
 	for s := 1; s <= steps; s++ {
 		grids = evolveRecursive(grids)
-		minLevel, maxLevel := 0, 0
+		// minLevel, maxLevel := 0, 0
 
-		for l, _ := range grids {
-			if l > maxLevel {
-				maxLevel = l
-			}
-			if l < minLevel {
-				minLevel = l
-			}
-		}
-		fmt.Println(minLevel, maxLevel)
+		// for l, _ := range grids {
+		// 	if l > maxLevel {
+		// 		maxLevel = l
+		// 	}
+		// 	if l < minLevel {
+		// 		minLevel = l
+		// 	}
+		// }
+		// fmt.Println(minLevel, maxLevel)
 
-		fmt.Println("STEP", s)
-		for l := minLevel; l <= maxLevel; l++ {
-			fmt.Println("Level", l)
-			fmt.Println(str(grids[l]))
-			fmt.Println()
-		}
-		fmt.Println()
+		// fmt.Println("STEP", s)
+		// for l := minLevel; l <= maxLevel; l++ {
+		// 	fmt.Println("Level", l)
+		// 	fmt.Println(str(grids[l]))
+		// 	fmt.Println()
+		// }
+		// fmt.Println()
 	}
 	// 674 too low
 
@@ -73,13 +73,15 @@ func bit(x, y int) int {
 	return 1 << (y*maxlen + x)
 }
 
-func str(grid int) string {
+type grid int
+
+func (g grid) String() string {
 	repr := []string{}
 	for y := 0; y < maxlen; y++ {
 		row := []rune{}
 		for x := 0; x < maxlen; x++ {
 			tile := empty
-			if grid&bit(x, y) > 0 {
+			if int(g)&bit(x, y) > 0 {
 				tile = bug
 			}
 			row = append(row, tile)
@@ -89,8 +91,8 @@ func str(grid int) string {
 	return strings.Join(repr, "\n")
 }
 
-func isBug(grid int, x, y int) bool {
-	return grid&bit(x, y) > 0
+func (g grid) isBug(x, y int) bool {
+	return int(g)&bit(x, y) > 0
 }
 
 func adjacent(x, y int) int {
@@ -154,24 +156,24 @@ func adjacentLevel(level, x, y int) int {
 	return adj
 }
 
-func evolve(grid int) int {
+func (g grid) evolve() grid {
 	next := 0
 	for y := 0; y < maxlen; y++ {
 		for x := 0; x < maxlen; x++ {
-			hm := bits.OnesCount(uint(grid & adjacent(x, y)))
-			if isBug(grid, x, y) && hm == 1 {
+			hm := bits.OnesCount(uint(int(g) & adjacent(x, y)))
+			if g.isBug(x, y) && hm == 1 {
 				next |= bit(x, y)
 			}
-			if !isBug(grid, x, y) && (hm == 1 || hm == 2) {
+			if !g.isBug(x, y) && (hm == 1 || hm == 2) {
 				next |= bit(x, y)
 			}
 		}
 	}
-	return next
+	return grid(next)
 }
 
-func evolveRecursive(grids map[int]int) map[int]int {
-	next := map[int]int{}
+func evolveRecursive(grids map[int]grid) map[int]grid {
+	next := map[int]grid{}
 	level := 0
 
 	for {
@@ -182,13 +184,13 @@ func evolveRecursive(grids map[int]int) map[int]int {
 				if x == 2 && y == 2 {
 					continue
 				}
-				hm := bits.OnesCount(uint(grids[level] & adjacent(x, y)))
-				hm += bits.OnesCount(uint(grids[level-1] & adjacentLevel(-1, x, y)))
-				hm += bits.OnesCount(uint(grids[level+1] & adjacentLevel(+1, x, y)))
-				if isBug(grids[level], x, y) && hm == 1 {
+				hm := bits.OnesCount(uint(int(grids[level]) & adjacent(x, y)))
+				hm += bits.OnesCount(uint(int(grids[level-1]) & adjacentLevel(-1, x, y)))
+				hm += bits.OnesCount(uint(int(grids[level+1]) & adjacentLevel(+1, x, y)))
+				if grids[level].isBug(x, y) && hm == 1 {
 					nextGrid |= bit(x, y)
 				}
-				if !isBug(grids[level], x, y) && (hm == 1 || hm == 2) {
+				if !grids[level].isBug(x, y) && (hm == 1 || hm == 2) {
 					nextGrid |= bit(x, y)
 				}
 			}
@@ -198,7 +200,7 @@ func evolveRecursive(grids map[int]int) map[int]int {
 			break
 		}
 
-		next[level] = nextGrid
+		next[level] = grid(nextGrid)
 		level--
 	}
 
@@ -211,13 +213,13 @@ func evolveRecursive(grids map[int]int) map[int]int {
 				if x == 2 && y == 2 {
 					continue
 				}
-				hm := bits.OnesCount(uint(grids[level] & adjacent(x, y)))
-				hm += bits.OnesCount(uint(grids[level-1] & adjacentLevel(-1, x, y)))
-				hm += bits.OnesCount(uint(grids[level+1] & adjacentLevel(1, x, y)))
-				if isBug(grids[level], x, y) && hm == 1 {
+				hm := bits.OnesCount(uint(int(grids[level]) & adjacent(x, y)))
+				hm += bits.OnesCount(uint(int(grids[level-1]) & adjacentLevel(-1, x, y)))
+				hm += bits.OnesCount(uint(int(grids[level+1]) & adjacentLevel(1, x, y)))
+				if grids[level].isBug(x, y) && hm == 1 {
 					nextGrid |= bit(x, y)
 				}
-				if !isBug(grids[level], x, y) && (hm == 1 || hm == 2) {
+				if !grids[level].isBug(x, y) && (hm == 1 || hm == 2) {
 					nextGrid |= bit(x, y)
 				}
 			}
@@ -227,21 +229,21 @@ func evolveRecursive(grids map[int]int) map[int]int {
 			break
 		}
 
-		next[level] = nextGrid
+		next[level] = grid(nextGrid)
 		level++
 	}
 
 	return next
 }
 
-func parse(lines []string) int {
-	var grid int = 0
+func parse(lines []string) grid {
+	var g = 0
 	for y, l := range lines {
 		for x, r := range l {
 			if r == bug {
-				grid |= bit(x, y)
+				g |= bit(x, y)
 			}
 		}
 	}
-	return grid
+	return grid(g)
 }
