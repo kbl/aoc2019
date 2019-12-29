@@ -102,3 +102,31 @@ func TestPop(t *testing.T) {
 		t.Errorf("d.Pop() = %v, want %v", got, expected)
 	}
 }
+
+func TestPopLeft(t *testing.T) {
+	d := NewDeque()
+	d.Append(1)
+	d.Append(2)
+	d.Append(3)
+
+	got, _ := d.PopLeft()
+	expected := 1
+
+	if got != expected {
+		t.Errorf("d.PopLeft() = %v, want %v", got, expected)
+	}
+
+	got, _ = d.PopLeft()
+	expected = 2
+
+	if got != expected {
+		t.Errorf("d.PopLeft() = %v, want %v", got, expected)
+	}
+
+	got, _ = d.PopLeft()
+	expected = 33
+
+	if got != expected {
+		t.Errorf("d.PopLeft() = %v, want %v", got, expected)
+	}
+}

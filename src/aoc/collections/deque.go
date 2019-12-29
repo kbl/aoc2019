@@ -52,16 +52,41 @@ func (d *Deque) Append(v int) {
 }
 
 func (d *Deque) Pop() (int, bool) {
-	if d.head != nil {
+	switch d.size {
+	case 0:
+		return 0, false
+	case 1:
+		d.size--
+		v := d.head.v
+		d.head = nil
+		d.tail = nil
+		return v, true
+	default:
 		d.size--
 		v := d.head.v
 		d.head = d.head.prev
-		if d.head != nil {
-			d.head.next = nil
-		}
+		d.head.next = nil
 		return v, true
 	}
-	return 0, false
+}
+
+func (d *Deque) PopLeft() (int, bool) {
+	switch d.size {
+	case 0:
+		return 0, false
+	case 1:
+		d.size--
+		v := d.head.v
+		d.head = nil
+		d.tail = nil
+		return v, true
+	default:
+		d.size--
+		v := d.tail.v
+		d.tail = d.tail.next
+		d.tail.prev = nil
+		return v, true
+	}
 }
 
 func (d *Deque) ToSlice(dir Direction) []int {
