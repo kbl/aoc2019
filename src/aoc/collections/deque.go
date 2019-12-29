@@ -1,7 +1,7 @@
 package collections
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -146,7 +146,7 @@ func (d *Deque) String() string {
 	repr := []string{}
 	n := d.tail
 	for n != nil {
-		repr = append(repr, fmt.Sprintf("%d", n.v))
+		repr = append(repr, strconv.Itoa(n.v))
 		n = n.next
 	}
 

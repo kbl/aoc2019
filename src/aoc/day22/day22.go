@@ -50,10 +50,37 @@ func Main(inputFilePath string) {
 	d := NewDeck(10007)
 	td := NewTrackingDeck(10007, 2019)
 	d.Shuffle(lines)
+	d.Shuffle(lines)
+	td.Track(lines)
 	td.Track(lines)
 
+	fmt.Println(d.cl.ToSlice(d.direction)[:10])
+
 	fmt.Println("Exercise 1:", d.Position(2019))
-	fmt.Println("Exercise 1:", td.Index)
+	fmt.Println("           ", td.Index)
+	fmt.Println()
+
+	f := function{indexMultiplier: 1}
+	for _, op := range parse(lines) {
+		switch op[0] {
+		case cut:
+			f = Cut(f, op[1])
+			f = f.Normalize(10007)
+		case inc:
+			f = Inc(f, op[1])
+			f = f.Normalize(10007)
+		case deal:
+			f = Deal(f)
+			f = f.Normalize(10007)
+		}
+	}
+	fmt.Println("           ", f.Value(2019, 10007))
+	fmt.Println(f)
+
+	f = f.Apply(f)
+	f = f.Normalize(10007)
+	fmt.Println("           ", f.Value(2019, 10007))
+	fmt.Println(f)
 }
 
 func (d *Deck) Shuffle(instructions []string) {
@@ -69,11 +96,6 @@ func (d *Deck) Shuffle(instructions []string) {
 	}
 }
 
-const (
-	forward  = 0
-	backward = 1
-)
-
 type Deck struct {
 	size      int
 	direction collections.Direction
@@ -85,15 +107,11 @@ func NewDeck(size int) *Deck {
 	for v := 0; v < size; v++ {
 		cl.Append(v)
 	}
-	return &Deck{size, forward, cl}
+	return &Deck{size, collections.Forward, cl}
 }
 
 func (d *Deck) String() string {
-	repr := []string{}
-	for _, v := range d.cl.ToSlice(d.direction) {
-		repr = append(repr, strconv.Itoa(v))
-	}
-	return strings.Join(repr, ", ")
+	return fmt.Sprintf("%v", d.cl)
 }
 
 func (d *Deck) Deal() {
@@ -174,64 +192,64 @@ func (d *TrackingDeck) Increment(n int) {
 	d.Index = d.Index * n % d.size
 }
 
-//	deal() = s - i - 1
-//	cut(n) = (i + s - n) % s
-//	inc(n) = i * n
-
-type Function struct {
+type function struct {
 	sizeMultiplier  int
 	indexMultiplier int
 	constant        int
 }
 
-var Deal = func() Function {
-	return Function{
-		sizeMultiplier:  1,
-		indexMultiplier: -1,
-		constant:        -1,
+func Deal(f function) function {
+	//	deal(i, s) = s - i - 1
+	return function{
+		sizeMultiplier:  1 - f.sizeMultiplier,
+		indexMultiplier: -f.indexMultiplier,
+		constant:        -1 - f.constant,
 	}
 }
 
-var Cut = func(n int) Function {
-	return Function{
-		sizeMultiplier:  1,
-		indexMultiplier: 1,
-		constant:        -n,
+func Cut(f function, n int) function {
+	//	cut(i, s, n) = i + s - n
+	return function{
+		sizeMultiplier:  1 + f.sizeMultiplier,
+		indexMultiplier: f.indexMultiplier,
+		constant:        f.constant - n,
 	}
 }
 
-var Inc = func(n int) Function {
-	return Function{
-		sizeMultiplier:  0,
-		indexMultiplier: n,
-		constant:        0,
+func Inc(f function, n int) function {
+	//	inc(i, s, n) = i * n
+	return function{
+		sizeMultiplier:  f.sizeMultiplier * n,
+		indexMultiplier: f.indexMultiplier * n,
+		constant:        f.constant * n,
 	}
 }
 
-func (f Function) String() string {
+func (f function) Apply(of function) function {
+	return function{
+		sizeMultiplier:  f.indexMultiplier*of.sizeMultiplier + f.sizeMultiplier,
+		indexMultiplier: f.indexMultiplier * of.indexMultiplier,
+		constant:        f.indexMultiplier*of.constant + f.constant,
+	}
+}
+
+func (f function) String() string {
 	return fmt.Sprintf("f(i, s) = i*%d + s*%d + %d", f.indexMultiplier, f.sizeMultiplier, f.constant)
 }
 
-func (f Function) Apply(of Function) Function {
-	return Function{
-		indexMultiplier: f.indexMultiplier + of.indexMultiplier,
-		sizeMultiplier:  f.sizeMultiplier + of.sizeMultiplier,
-		constant:        f.constant + of.constant,
-	}
-}
-
-func (f Function) Normalize(n int) Function {
-	if f.indexMultiplier < 0 || f.sizeMultiplier < 0 || f.constant < 0 {
-		panic("Can't normalize negative values!")
-	}
-	return Function{
+func (f function) Normalize(n int) function {
+	return function{
 		indexMultiplier: f.indexMultiplier % n,
 		sizeMultiplier:  f.sizeMultiplier % n,
 		constant:        f.constant % n,
 	}
 }
 
-func (f Function) Value(i, s int) int {
+func (f function) Value(i, s int) int {
 	f = f.Normalize(s)
-	return ((i*f.indexMultiplier)%s + (s*f.sizeMultiplier)%s + f.constant) % s
+	v := ((i*f.indexMultiplier)%s + (s*f.sizeMultiplier)%s + f.constant) % s
+	if v < 0 {
+		v = s + v
+	}
+	return v
 }
