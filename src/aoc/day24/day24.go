@@ -36,31 +36,34 @@ func exercise1(g grid) int {
 	return int(g)
 }
 
+func str(grids map[int]grid) {
+	minLevel, maxLevel := 0, 0
+
+	for l, _ := range grids {
+		if l > maxLevel {
+			maxLevel = l
+		}
+		if l < minLevel {
+			minLevel = l
+		}
+	}
+	fmt.Println(minLevel, maxLevel)
+
+	for l := minLevel; l <= maxLevel; l++ {
+		fmt.Println("Level", l)
+		fmt.Println(grids[l])
+		fmt.Println()
+	}
+	fmt.Println()
+}
+
 func exercise2(steps int, g grid) int {
 	grids := map[int]grid{0: g}
 	for s := 1; s <= steps; s++ {
 		grids = evolveRecursive(grids)
-		// minLevel, maxLevel := 0, 0
-
-		// for l, _ := range grids {
-		// 	if l > maxLevel {
-		// 		maxLevel = l
-		// 	}
-		// 	if l < minLevel {
-		// 		minLevel = l
-		// 	}
-		// }
-		// fmt.Println(minLevel, maxLevel)
-
-		// fmt.Println("STEP", s)
-		// for l := minLevel; l <= maxLevel; l++ {
-		// 	fmt.Println("Level", l)
-		// 	fmt.Println(str(grids[l]))
-		// 	fmt.Println()
-		// }
-		// fmt.Println()
 	}
 	// 674 too low
+	str(grids)
 
 	hm := 0
 	for _, g := range grids {
@@ -111,6 +114,16 @@ func adjacent(x, y int) int {
 	}
 	return adj
 }
+
+//           21
+//
+//     00 10 20 30 40
+//     01 11 21 31 41
+// 12  02 12 xy 32 42  32
+//     03 13 23 33 43
+//     04 14 24 34 44
+//
+//           23
 
 func adjacentLevel(level, x, y int) int {
 	adj := 0
@@ -196,7 +209,8 @@ func evolveRecursive(grids map[int]grid) map[int]grid {
 			}
 		}
 
-		if nextGrid == 0 {
+		_, isDeeper := grids[level-1]
+		if nextGrid == 0 && !isDeeper {
 			break
 		}
 
@@ -225,7 +239,8 @@ func evolveRecursive(grids map[int]grid) map[int]grid {
 			}
 		}
 
-		if nextGrid == 0 {
+		_, isDeeper := grids[level+1]
+		if nextGrid == 0 && !isDeeper {
 			break
 		}
 
