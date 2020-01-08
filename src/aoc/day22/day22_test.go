@@ -107,11 +107,11 @@ func TestPosition(t *testing.T) {
 }
 
 func TestShuffle(t *testing.T) {
-	instructions := `deal with increment 7
+	instructions := strings.Split(`deal with increment 7
 deal into new stack
-deal into new stack`
+deal into new stack`, "\n")
 	d := NewDeck(10)
-	d.Shuffle(strings.Split(instructions, "\n"))
+	d.Shuffle(instructions)
 	expected := []int{0, 3, 6, 9, 2, 5, 8, 1, 4, 7}
 	got := d.Content()
 	if !reflect.DeepEqual(got, expected) {
@@ -119,17 +119,17 @@ deal into new stack`
 	}
 
 	td := NewTrackingDeck(10, 9)
-	td.Track(strings.Split(instructions, "\n"))
+	td.Track(instructions)
 	expectedIndex := 3
 	if td.Index != expectedIndex {
 		t.Errorf("NewTrackingDeck(10, 9).Track() = %d, want %d", td.Index, expectedIndex)
 	}
 
-	instructions = `cut 6
+	instructions = strings.Split(`cut 6
 deal with increment 7
-deal into new stack`
+deal into new stack`, "\n")
 	d = NewDeck(10)
-	d.Shuffle(strings.Split(instructions, "\n"))
+	d.Shuffle(instructions)
 	expected = []int{3, 0, 7, 4, 1, 8, 5, 2, 9, 6}
 	got = d.Content()
 	if !reflect.DeepEqual(got, expected) {
@@ -137,17 +137,17 @@ deal into new stack`
 	}
 
 	td = NewTrackingDeck(10, 9)
-	td.Track(strings.Split(instructions, "\n"))
+	td.Track(instructions)
 	expectedIndex = 8
 	if td.Index != expectedIndex {
 		t.Errorf("NewTrackingDeck(10, 9).Track() = %d, want %d", td.Index, expectedIndex)
 	}
 
-	instructions = `deal with increment 7
+	instructions = strings.Split(`deal with increment 7
 deal with increment 9
-cut -2`
+cut -2`, "\n")
 	d = NewDeck(10)
-	d.Shuffle(strings.Split(instructions, "\n"))
+	d.Shuffle(instructions)
 	expected = []int{6, 3, 0, 7, 4, 1, 8, 5, 2, 9}
 	got = d.Content()
 	if !reflect.DeepEqual(got, expected) {
@@ -155,13 +155,13 @@ cut -2`
 	}
 
 	td = NewTrackingDeck(10, 0)
-	td.Track(strings.Split(instructions, "\n"))
+	td.Track(instructions)
 	expectedIndex = 2
 	if td.Index != expectedIndex {
 		t.Errorf("NewTrackingDeck(10, 0).Track() = %d, want %d", td.Index, expectedIndex)
 	}
 
-	instructions = `deal into new stack
+	instructions = strings.Split(`deal into new stack
 cut -2
 deal with increment 7
 cut 8
@@ -170,9 +170,9 @@ deal with increment 7
 cut 3
 deal with increment 9
 deal with increment 3
-cut -1`
+cut -1`, "\n")
 	d = NewDeck(10)
-	d.Shuffle(strings.Split(instructions, "\n"))
+	d.Shuffle(instructions)
 	expected = []int{9, 2, 5, 8, 1, 4, 7, 0, 3, 6}
 	got = d.Content()
 	if !reflect.DeepEqual(got, expected) {
@@ -180,9 +180,43 @@ cut -1`
 	}
 
 	td = NewTrackingDeck(10, 0)
-	td.Track(strings.Split(instructions, "\n"))
+	td.Track(instructions)
 	expectedIndex = 7
 	if td.Index != expectedIndex {
 		t.Errorf("NewTrackingDeck(10, 0).Track() = %d, want %d", td.Index, expectedIndex)
+	}
+}
+
+func TestFunctions(t *testing.T) {
+	tcs := [][]string{
+		{"deal with increment 7"},
+		{"deal into new stack"},
+		{
+			"deal into new stack",
+			"deal into new stack",
+		},
+		{
+			"deal into new stack",
+			"cut -2",
+			"cut 8",
+			"deal into new stack",
+			"cut -4",
+			"cut 3",
+			"cut -1",
+		},
+	}
+	size := 10007
+
+	for _, instructions := range tcs {
+		d := NewDeck(size)
+		d.Shuffle(instructions)
+		expected := d.Content()
+
+		for index, finalValue := range expected {
+			got := trackFunctions(instructions, index, size)
+			if got != finalValue {
+				t.Errorf("trackFunctions(%v, %d, %d) = %d, want %d", instructions, index, size, got, finalValue)
+			}
+		}
 	}
 }
