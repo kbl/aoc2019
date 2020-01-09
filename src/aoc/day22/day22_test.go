@@ -153,7 +153,8 @@ func TestFunctions(t *testing.T) {
 		expected := d.Content()
 
 		for index, finalValue := range expected {
-			got := trackFunctions(instructions, index, size)
+			f := toFunction(instructions, size)
+			got := f.Value(index, size)
 			if got != finalValue {
 				t.Errorf("trackFunctions(%v, %d, %d) = %d, want %d", instructions, index, size, got, finalValue)
 			}

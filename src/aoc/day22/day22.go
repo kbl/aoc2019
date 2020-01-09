@@ -5,6 +5,7 @@ import (
 	"aoc/collections"
 	"fmt"
 	"log"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -52,15 +53,53 @@ func Main(inputFilePath string) {
 	d.Shuffle(lines)
 
 	fmt.Println(d.cl.ToSlice(d.direction)[:10])
-	fmt.Println(d.cl.ToSlice(d.direction)[size-10:])
 
-	fmt.Println("Exercise 1:", d.Position(2019))
-	fmt.Println("           ", trackFunctions(lines, 2019, size))
+	f := toFunction(lines, size)
+	fmt.Println("Exercise 1:", f.Value(2019, size))
+	fmt.Println("           ", f)
+
+	size = 119315717514047
+	reps := 101741582076661
+	f = toFunction(lines, size)
+	fmt.Println("Exercise 2:", exercise2(f, size, reps))
+
+	// f(i) = i*44064224361553 + 47730710794979
+	//
+	// wolframalpha to the rescue ;)
+	// 2020 = i*44064224361553 + 47730710794979 mod 119315717514047
+	// 78613970589919
 }
 
-func trackFunctions(lines []string, index, size int) int {
+func exercise2(f function, size, reps int) function {
+	powers := []int{1}
+	powerToF := map[int]function{
+		1: f,
+	}
+
+	for i := 2; i <= reps; i *= 2 {
+		f = f.Apply(f)
+		f = f.Normalize(size)
+		powerToF[i] = f
+		powers = append(powers, i)
+	}
+
+	finalFunction := function{indexMultiplier: big.NewInt(1), constant: big.NewInt(0)}
+
+	for i := len(powers) - 1; i >= 0; i-- {
+		p := powers[i]
+		if reps >= p {
+			reps -= p
+			finalFunction = finalFunction.Apply(powerToF[p])
+			finalFunction = finalFunction.Normalize(size)
+		}
+	}
+
+	return finalFunction
+}
+
+func toFunction(lines []string, size int) function {
 	ops := parse(lines)
-	f := function{indexMultiplier: 1}
+	f := function{indexMultiplier: big.NewInt(1), constant: big.NewInt(0)}
 	for i := 0; i < len(ops); i++ {
 		op := ops[i]
 		switch op[0] {
@@ -75,7 +114,7 @@ func trackFunctions(lines []string, index, size int) int {
 			f = f.Normalize(size)
 		}
 	}
-	return f.Value(index, size)
+	return f
 }
 
 func (d *Deck) Shuffle(instructions []string) {
@@ -155,15 +194,15 @@ func (d *Deck) Position(n int) int {
 }
 
 type function struct {
-	indexMultiplier int
-	constant        int
+	indexMultiplier *big.Int
+	constant        *big.Int
 }
 
 func Deal(f function) function {
 	// deal(i) = -i - 1
 	return function{
-		indexMultiplier: -f.indexMultiplier,
-		constant:        -1 - f.constant,
+		indexMultiplier: big.NewInt(0).Mul(f.indexMultiplier, big.NewInt(-1)),
+		constant:        big.NewInt(0).Sub(big.NewInt(-1), f.constant),
 	}
 }
 
@@ -171,99 +210,58 @@ func Cut(f function, n int) function {
 	// cut(i, n) = i - n
 	return function{
 		indexMultiplier: f.indexMultiplier,
-		constant:        f.constant - n,
+		constant:        big.NewInt(0).Sub(f.constant, big.NewInt(int64(n))),
 	}
 }
 
 func Inc(f function, n int) function {
 	// inc(i, n) = i * n
+	nn := big.NewInt(int64(n))
 	return function{
-		indexMultiplier: f.indexMultiplier * n,
-		constant:        f.constant * n,
-	}
-}
-
-func Undeal(f function) function {
-	//   deal(i) = -i - 1
-	// undeal(i) = -i - 1
-	return function{
-		indexMultiplier: -f.indexMultiplier,
-		constant:        -1 - f.constant,
-	}
-}
-
-func Uncut(f function, n int) function {
-	//   cut(i, n) = i - n
-	// uncut(i, n) = i + n
-	return function{
-		indexMultiplier: f.indexMultiplier,
-		constant:        f.constant + n,
-	}
-}
-
-func Uninc(f function, s, n int) function {
-	// s            10007
-	// n            7
-	// s / n        1429
-	// s % n        4
-	// n-s%n        3
-	// i % n        0    1    2    3    4    5    6  0    1    2
-	// i / n        0    0    0    0    0    0    0  1    1    1
-	// (n-s%n)*i%n  0    5    3    1    6    4    2  0    5    3
-	// result       0 7148 4289 1430 8578 5719 2860  1 7149 4290
-
-	//    inc(i, s, n) = i * n
-	//	uninc(i, s, n) = (n * (n-i%n) + i//n + 1)
-
-	mapping := map[int]int{}
-	reminder := s % n
-
-	for i := 0; i < n; i++ {
-		mapping[(n-reminder)*i%n] = i
-	}
-
-	return function{
-		indexMultiplier: f.indexMultiplier * n,
-		constant:        f.constant * n,
+		indexMultiplier: big.NewInt(0).Mul(f.indexMultiplier, nn),
+		constant:        big.NewInt(0).Mul(f.constant, nn),
 	}
 }
 
 func (f function) Apply(of function) function {
 	return function{
-		indexMultiplier: f.indexMultiplier * of.indexMultiplier,
-		constant:        f.indexMultiplier*of.constant + f.constant,
+		indexMultiplier: big.NewInt(0).Mul(f.indexMultiplier, of.indexMultiplier),
+		constant:        big.NewInt(0).Add(f.constant, big.NewInt(0).Mul(of.constant, f.indexMultiplier)),
 	}
 }
 
 func (f function) String() string {
 	iSign := ""
 	i := f.indexMultiplier
-	if i < 0 {
-		i *= -1
+	if i.Sign() < 0 {
+		i = big.NewInt(1).Mul(big.NewInt(-1), i)
 		iSign = "-"
 	}
 
 	constSign := "+"
 	constant := f.constant
-	if constant < 0 {
-		constant *= -1
+	if constant.Sign() < 0 {
+		constant = big.NewInt(1).Mul(big.NewInt(-1), constant)
 		constSign = "-"
 	}
 	return fmt.Sprintf("f(i) = %si*%d %s %d", iSign, i, constSign, constant)
 }
 
 func (f function) Normalize(n int) function {
+	nn := big.NewInt(int64(n))
 	return function{
-		indexMultiplier: f.indexMultiplier % n,
-		constant:        f.constant % n,
+		indexMultiplier: big.NewInt(0).Mod(f.indexMultiplier, nn),
+		constant:        big.NewInt(0).Mod(f.constant, nn),
 	}
 }
 
 func (f function) Value(i, s int) int {
 	f = f.Normalize(s)
-	v := ((i*f.indexMultiplier)%s + f.constant) % s
+	im := f.indexMultiplier.Int64()
+	c := f.constant.Int64()
+	v := ((int64(i)*im)%int64(s) + c) % int64(s)
 	if v < 0 {
-		v = s + v
+		v = int64(s) + v
 	}
-	return v
+	return int(v)
 }
