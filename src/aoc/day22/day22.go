@@ -72,7 +72,7 @@ func trackFunctions(lines []string, index, size int) int {
 			f = Uncut(f, op[1])
 			f = f.Normalize(size)
 		case inc:
-			f = Uninc(f, op[1])
+			f = Uninc(f, size, op[1])
 			f = f.Normalize(size)
 		case deal:
 			f = Undeal(f)
@@ -244,53 +244,31 @@ func Uncut(f function, n int) function {
 	}
 }
 
-// s = 10
-// n = 9
-// 0 -> 0
-// 1 -> 9
-// 2 -> 8
-// 3 -> 7
-// 4 -> 6
-// 5 -> 5
-// 6 -> 4
-// 7 -> 3
-// 8 -> 2
-// 9 -> 1
-//
-// n = 7
-// 0 -> 0
-// 1 -> 3
-// 2 -> 6
-// 3 -> 9
-// 4 -> 2
-// 5 -> 5
-// 6 -> 8
-// 7 -> 1
-// 8 -> 4
-// 9 -> 7
-//
-// n = 1
-// 0 -> 0
-// 1 -> 1
-// 2 -> 2
-// 3 -> 3
-// 4 -> 4
-// 5 -> 5
-// 6 -> 6
-// 7 -> 7
-// 8 -> 8
-// 9 -> 9
+func Uninc(f function, s, n int) function {
+	// s            10007
+	// n            7
+	// s / n        1429
+	// s % n        4
+	// n-s%n        3
+	// i % n        0    1    2    3    4    5    6  0    1    2
+	// i / n        0    0    0    0    0    0    0  1    1    1
+	// (n-s%n)*i%n  0    5    3    1    6    4    2  0    5    3
+	// result       0 7148 4289 1430 8578 5719 2860  1 7149 4290
 
-// s = 10007
-// n = 7
-// 0 -> 0
-// 1 -> 7
-// 2 -> 14
-// 3 -> 21
-// …
+	//    inc(i, s, n) = i * n
+	//	uninc(i, s, n) = (n * (n-i%n) + i//n + 1)
 
-func Uninc(f function, n int) function {
-	//	uninc(i, s, n) = s - i * n
+	mapping := map[int]int{}
+
+	division := s / n
+	reminder := s % n
+
+	for i := 0; i < n; i++ {
+		mapping[(n-reminder)*i%n] = i
+	}
+
+	fmt.Println(division, mapping)
+
 	return function{
 		sizeMultiplier:  f.sizeMultiplier * n,
 		indexMultiplier: f.indexMultiplier * n,
