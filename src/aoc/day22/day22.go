@@ -79,6 +79,7 @@ func trackFunctions(lines []string, index, size int) int {
 			f = f.Normalize(size)
 		}
 	}
+	fmt.Println(f)
 	return f.Value(index, size)
 }
 
@@ -192,53 +193,47 @@ func (d *TrackingDeck) Increment(n int) {
 }
 
 type function struct {
-	sizeMultiplier  int
 	indexMultiplier int
 	constant        int
 }
 
 func Deal(f function) function {
-	//	deal(i, s) = s - i - 1
+	// deal(i) = -i - 1
 	return function{
-		sizeMultiplier:  1 - f.sizeMultiplier,
 		indexMultiplier: -f.indexMultiplier,
 		constant:        -1 - f.constant,
 	}
 }
 
 func Cut(f function, n int) function {
-	//	cut(i, s, n) = i + s - n
+	// cut(i, n) = i - n
 	return function{
-		sizeMultiplier:  1 + f.sizeMultiplier,
 		indexMultiplier: f.indexMultiplier,
 		constant:        f.constant - n,
 	}
 }
 
 func Inc(f function, n int) function {
-	//	inc(i, s, n) = i * n
+	// inc(i, n) = i * n
 	return function{
-		sizeMultiplier:  f.sizeMultiplier * n,
 		indexMultiplier: f.indexMultiplier * n,
 		constant:        f.constant * n,
 	}
 }
 
 func Undeal(f function) function {
-	//   deal(i, s) = s - i - 1
-	// undeal(i, s) = s - i - 1
+	//   deal(i) = -i - 1
+	// undeal(i) = -i - 1
 	return function{
-		sizeMultiplier:  1 - f.sizeMultiplier,
 		indexMultiplier: -f.indexMultiplier,
 		constant:        -1 - f.constant,
 	}
 }
 
 func Uncut(f function, n int) function {
-	//   cut(i, s, n) = i + s - n
-	// uncut(i, s, n) = i + s + n
+	//   cut(i, n) = i - n
+	// uncut(i, n) = i + n
 	return function{
-		sizeMultiplier:  1 + f.sizeMultiplier,
 		indexMultiplier: f.indexMultiplier,
 		constant:        f.constant + n,
 	}
@@ -259,18 +254,13 @@ func Uninc(f function, s, n int) function {
 	//	uninc(i, s, n) = (n * (n-i%n) + i//n + 1)
 
 	mapping := map[int]int{}
-
-	division := s / n
 	reminder := s % n
 
 	for i := 0; i < n; i++ {
 		mapping[(n-reminder)*i%n] = i
 	}
 
-	fmt.Println(division, mapping)
-
 	return function{
-		sizeMultiplier:  f.sizeMultiplier * n,
 		indexMultiplier: f.indexMultiplier * n,
 		constant:        f.constant * n,
 	}
@@ -278,27 +268,38 @@ func Uninc(f function, s, n int) function {
 
 func (f function) Apply(of function) function {
 	return function{
-		sizeMultiplier:  f.indexMultiplier*of.sizeMultiplier + f.sizeMultiplier,
 		indexMultiplier: f.indexMultiplier * of.indexMultiplier,
 		constant:        f.indexMultiplier*of.constant + f.constant,
 	}
 }
 
 func (f function) String() string {
-	return fmt.Sprintf("f(i, s) = i*%d + s*%d + %d", f.indexMultiplier, f.sizeMultiplier, f.constant)
+	iSign := ""
+	i := f.indexMultiplier
+	if i < 0 {
+		i *= -1
+		iSign = "-"
+	}
+
+	constSign := "+"
+	constant := f.constant
+	if constant < 0 {
+		constant *= -1
+		constSign = "-"
+	}
+	return fmt.Sprintf("f(i) = %si*%d %s %d", iSign, i, constSign, constant)
 }
 
 func (f function) Normalize(n int) function {
 	return function{
 		indexMultiplier: f.indexMultiplier % n,
-		sizeMultiplier:  f.sizeMultiplier % n,
 		constant:        f.constant % n,
 	}
 }
 
 func (f function) Value(i, s int) int {
 	f = f.Normalize(s)
-	v := ((i*f.indexMultiplier)%s + (s*f.sizeMultiplier)%s + f.constant) % s
+	v := ((i*f.indexMultiplier)%s + f.constant) % s
 	if v < 0 {
 		v = s + v
 	}
