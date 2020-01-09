@@ -49,37 +49,32 @@ func Main(inputFilePath string) {
 	lines := aoc.Read(inputFilePath)
 	size := 10007
 	d := NewDeck(size)
-	td := NewTrackingDeck(size, 2019)
 	d.Shuffle(lines)
-	td.Track(lines)
 
 	fmt.Println(d.cl.ToSlice(d.direction)[:10])
 	fmt.Println(d.cl.ToSlice(d.direction)[size-10:])
 
 	fmt.Println("Exercise 1:", d.Position(2019))
-	fmt.Println("           ", td.Index)
-	fmt.Println("           ", trackFunctions(lines, 2, size))
+	fmt.Println("           ", trackFunctions(lines, 2019, size))
 }
 
 func trackFunctions(lines []string, index, size int) int {
 	ops := parse(lines)
 	f := function{indexMultiplier: 1}
-	for i := len(ops) - 1; i >= 0; i-- {
-		// for i := 0; i < len(ops); i++ {
+	for i := 0; i < len(ops); i++ {
 		op := ops[i]
 		switch op[0] {
 		case cut:
-			f = Uncut(f, op[1])
+			f = Cut(f, op[1])
 			f = f.Normalize(size)
 		case inc:
-			f = Uninc(f, size, op[1])
+			f = Inc(f, op[1])
 			f = f.Normalize(size)
 		case deal:
-			f = Undeal(f)
+			f = Deal(f)
 			f = f.Normalize(size)
 		}
 	}
-	fmt.Println(f)
 	return f.Value(index, size)
 }
 
@@ -157,39 +152,6 @@ func (d *Deck) Position(n int) int {
 		}
 	}
 	return -1
-}
-
-type TrackingDeck struct {
-	size, Index int
-}
-
-func NewTrackingDeck(size, index int) *TrackingDeck {
-	return &TrackingDeck{size, index}
-}
-
-func (d *TrackingDeck) Track(instructions []string) {
-	for _, op := range parse(instructions) {
-		switch op[0] {
-		case cut:
-			d.Cut(op[1])
-		case inc:
-			d.Increment(op[1])
-		case deal:
-			d.Deal()
-		}
-	}
-}
-
-func (d *TrackingDeck) Deal() {
-	d.Index = d.size - d.Index - 1
-}
-
-func (d *TrackingDeck) Cut(n int) {
-	d.Index = (d.Index + d.size - n) % d.size
-}
-
-func (d *TrackingDeck) Increment(n int) {
-	d.Index = d.Index * n % d.size
 }
 
 type function struct {
